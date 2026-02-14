@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Loader2, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useProjects, useBudgetCategories, DbBudgetCategory } from "@/hooks/use-supabase-data";
 import { useDeleteBudgetCategory } from "@/hooks/use-supabase-mutations";
+import { usePermissions } from "@/hooks/use-permissions";
 import BudgetCategoryDialog from "@/components/dialogs/BudgetCategoryDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
@@ -23,6 +24,7 @@ export default function Budget() {
   const [editCat, setEditCat] = useState<DbBudgetCategory | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteCat = useDeleteBudgetCategory();
+  const { canManageBudget } = usePermissions();
 
   if (lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -57,7 +59,7 @@ export default function Budget() {
             <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
             <SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
           </Select>
-          <Button onClick={() => { setEditCat(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />Add Category</Button>
+          {canManageBudget && <Button onClick={() => { setEditCat(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />Add Category</Button>}
         </div>
       </div>
 
@@ -146,13 +148,15 @@ export default function Budget() {
                         <td className={`p-3 text-sm text-right font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}${diff.toLocaleString()}</td>
                         <td className="p-3 text-sm text-right">{pct}%</td>
                         <td className="p-3">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => { setEditCat(cat); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(cat.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {canManageBudget && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setEditCat(cat); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(cat.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </td>
                       </tr>
                     );

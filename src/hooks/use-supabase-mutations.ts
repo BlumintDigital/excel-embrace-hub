@@ -139,3 +139,72 @@ export function useDeleteDocument() {
     onError: (e: Error) => toast.error(e.message),
   });
 }
+
+// ── Project Members ──
+export function useAddProjectMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { project_id: string; user_id: string; role?: string }) => {
+      const { error } = await supabase.from("project_members").insert(data);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["project_members"] }); toast.success("Member added"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useRemoveProjectMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("project_members").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["project_members"] }); toast.success("Member removed"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+// ── User Management (via edge functions) ──
+export function useInviteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { email: string; full_name: string; role: string }) => {
+      const { data: result, error } = await supabase.functions.invoke("invite-user", { body: data });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["team_members"] });
+      toast.success("User invited successfully. Temp password: " + data.temp_password, { duration: 15000 });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useUpdateUserRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { user_id: string; role: string }) => {
+      const { data: result, error } = await supabase.functions.invoke("update-user-role", { body: data });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("Role updated"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data: result, error } = await supabase.functions.invoke("delete-user", { body: { user_id: userId } });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("User removed"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
