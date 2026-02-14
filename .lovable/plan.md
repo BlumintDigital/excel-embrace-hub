@@ -1,68 +1,91 @@
 
-# Piping Project Management Portal
+
+# Connect PipeFlow to Supabase Backend
 
 ## Overview
-A visual, modern project management portal for piping projects, supporting a team of 5+ members with role-based access (Admin, Manager, Member). The Excel budget data will be imported as initial seed data, and all project management will happen within the portal going forward.
+Set up Supabase as the backend for PipeFlow, replacing mock data with a real database, authentication, and role-based access control.
 
 ---
 
-## 1. Authentication & Role-Based Access
-- **Login/signup** with email and password
-- **Three roles**: Admin, Project Manager, Team Member
-- Admins can manage users, roles, and all projects
-- Project Managers can create/edit projects and assign tasks
-- Team Members can view assigned projects and update their tasks
-- User profiles with name, role, and avatar
+## Step 1: Enable Supabase
+- Connect the project to Supabase (Lovable Cloud) to provision a database, auth, and storage.
 
-## 2. Dashboard (Home)
-- Visual overview with summary cards: total projects, active tasks, budget health, team members
-- Charts showing budget utilization across projects (projected vs. actual)
-- Recent activity feed
-- Quick-access links to active projects
+## Step 2: Database Schema
+Create the following tables via migrations:
 
-## 3. Multi-Project Management
-- Create, edit, and archive multiple piping projects
-- Each project has its own budget, team, tasks, timeline, and documents
-- Project status indicators (Planning, In Progress, Completed, On Hold)
-- Project list view with filtering and search
+### Roles System
+- **app_role enum**: `admin`, `project_manager`, `team_member`
+- **user_roles table**: Links `auth.users` to roles (separate from profiles to prevent privilege escalation)
+- **has_role() function**: Security definer function for safe RLS checks
 
-## 4. Budget Tracker (from Excel data)
-- Import the Excel budget structure as the initial template for new projects
-- Budget categories matching your spreadsheet: Consumables, Transportation, Food, Insurance, Personal Care, Entertainment, etc.
-- **Projected vs. Actual cost** tracking per category with automatic difference calculation
-- Income tracking (projected and actual)
-- Visual budget summary with charts (bar charts for category comparison, donut chart for expense breakdown)
-- Budget health indicator showing projected vs. actual balance
+### Profiles Table
+- `id` (UUID, references auth.users)
+- `full_name`, `avatar_url`, `email`
+- Auto-created via trigger on user signup
 
-## 5. Task Management
-- Create tasks within each project
-- Assign tasks to team members
-- Task statuses: To Do, In Progress, Done
-- Priority levels and due dates
-- Task list and board (Kanban) views
+### Projects Table
+- `id`, `name`, `description`, `status` (enum: Planning, In Progress, Completed, On Hold)
+- `start_date`, `end_date`, `budget_projected`, `budget_actual`
+- `created_by` (references auth.users)
 
-## 6. Timeline / Gantt Chart
-- Visual project timeline showing milestones and task durations
-- Drag-and-drop to adjust dates
-- Color-coded by status or assignee
+### Project Members Table
+- Links users to projects with their role on that project
 
-## 7. Team & Workforce Tracking
-- Add team members to projects
-- View member assignments and workload across projects
-- Contact details and role information
+### Tasks Table
+- `id`, `project_id`, `title`, `description`, `status`, `priority`
+- `assignee_id`, `due_date`, `start_date`
 
-## 8. Document Management
-- Upload and organize project documents per project
-- File categories (drawings, permits, reports, etc.)
-- Preview and download files
+### Budget Categories Table
+- `id`, `project_id`, `name`, `projected`, `actual`
 
-## 9. Backend (Lovable Cloud with Supabase)
-- Database for projects, budgets, tasks, team members, documents
-- Role-based Row Level Security policies
-- File storage for document uploads
-- User authentication and profile management
+### Documents Table
+- `id`, `project_id`, `name`, `file_path`, `category`, `uploaded_by`
+
+## Step 3: Row-Level Security (RLS)
+- All tables have RLS enabled
+- Admins can read/write everything (via `has_role()` function)
+- Project Managers can manage projects they belong to
+- Team Members can view their assigned projects and update their own tasks
+- Profiles: users can read all profiles, update only their own
+
+## Step 4: Storage
+- Create a `documents` storage bucket for project file uploads
+- RLS policies so only project members can upload/download files
+
+## Step 5: Seed Budget Data
+- Insert your Excel budget categories (Consumables, Transportation, Food, Insurance, Personal Care, Entertainment) as the initial budget template data
+
+## Step 6: Frontend Integration
+- **Auth context**: Create an `AuthProvider` wrapping the app with `onAuthStateChange` listener
+- **Protected routes**: Redirect unauthenticated users to `/login`
+- **Login/Signup pages**: Wire up to Supabase Auth (email + password)
+- **Replace mock data**: Swap all `mockUsers`, `mockProjects`, etc. with Supabase queries using TanStack Query
+- **Role-based UI**: Show/hide admin features based on user role
+
+## Step 7: Auto-assign First User as Admin
+- Create a trigger so the first user who signs up gets the `admin` role automatically
 
 ---
 
-## Implementation Approach
-We'll start with authentication and the core dashboard, then build out the budget tracker (seeded from your Excel data), followed by task management, timeline, team tracking, and document management — each as incremental steps.
+## Technical Details
+
+### Database Trigger for Profile Creation
+```text
+On auth.users INSERT -> create profiles row with id, email, full_name from metadata
+```
+
+### Auth Flow
+```text
+Signup -> creates auth.users row -> trigger creates profile -> trigger assigns role
+Login -> onAuthStateChange fires -> fetch profile + role -> set context
+```
+
+### Migration Order
+1. Enums and helper functions
+2. Profiles table + trigger
+3. User roles table + has_role function + trigger
+4. Projects, project_members, tasks, budget_categories, documents tables
+5. RLS policies for all tables
+6. Storage bucket + policies
+7. Seed budget data
+
