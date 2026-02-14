@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, Loader2, MoreHorizontal, Pencil, Trash2, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useProjects, useTasks, useProjectMembers, useTeamMembers, DbProject } from "@/hooks/use-supabase-data";
 import { useDeleteProject } from "@/hooks/use-supabase-mutations";
 import ProjectDialog from "@/components/dialogs/ProjectDialog";
+import ProjectMembersDialog from "@/components/dialogs/ProjectMembersDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
 const statusColors: Record<string, string> = {
@@ -25,6 +26,7 @@ export default function Projects() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProject, setEditProject] = useState<DbProject | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [membersProject, setMembersProject] = useState<DbProject | null>(null);
 
   const { data: projects = [], isLoading: lp } = useProjects();
   const { data: tasks = [] } = useTasks();
@@ -84,6 +86,7 @@ export default function Projects() {
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => { setEditProject(project); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setMembersProject(project)}><Users className="h-3.5 w-3.5 mr-2" />Members</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(project.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -99,7 +102,7 @@ export default function Projects() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="flex -space-x-2">
+                      <div className="flex -space-x-2 cursor-pointer" onClick={() => setMembersProject(project)}>
                         {projectTeam.slice(0, 4).map((u) => (
                           <Avatar key={u.id} className="h-7 w-7 border-2 border-card">
                             <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
@@ -107,6 +110,9 @@ export default function Projects() {
                             </AvatarFallback>
                           </Avatar>
                         ))}
+                        {projectTeam.length === 0 && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" />Add members</span>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">{doneTasks}/{projectTasks.length} tasks done</span>
                     </div>
@@ -119,6 +125,16 @@ export default function Projects() {
       )}
 
       <ProjectDialog open={dialogOpen} onOpenChange={setDialogOpen} project={editProject} />
+      {membersProject && (
+        <ProjectMembersDialog
+          open={!!membersProject}
+          onOpenChange={() => setMembersProject(null)}
+          projectId={membersProject.id}
+          projectName={membersProject.name}
+          team={team}
+          members={members}
+        />
+      )}
       <DeleteConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteProject.mutate(deleteId); setDeleteId(null); } }} title="Delete Project" description="This will permanently delete the project and cannot be undone." />
     </div>
   );

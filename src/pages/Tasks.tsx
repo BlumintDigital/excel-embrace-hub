@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { Loader2, Plus, MoreHorizontal, Pencil, Trash2, ArrowRight } from "lucide-react";
 import { useTasks, useTeamMembers, useProjects, DbTask } from "@/hooks/use-supabase-data";
-import { useDeleteTask } from "@/hooks/use-supabase-mutations";
+import { useDeleteTask, useUpdateTask } from "@/hooks/use-supabase-mutations";
 import TaskDialog from "@/components/dialogs/TaskDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
@@ -21,6 +21,12 @@ const priorityColors: Record<string, string> = {
   Low: "bg-success/15 text-success border-success/30",
 };
 
+const statusColors: Record<string, string> = {
+  "To Do": "bg-muted text-muted-foreground hover:bg-muted/80",
+  "In Progress": "bg-primary/15 text-primary hover:bg-primary/25",
+  "Done": "bg-success/15 text-success hover:bg-success/25",
+};
+
 export default function Tasks() {
   const [view, setView] = useState<"board" | "list">("board");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -31,10 +37,34 @@ export default function Tasks() {
   const { data: team = [] } = useTeamMembers();
   const { data: projects = [] } = useProjects();
   const deleteTask = useDeleteTask();
+  const updateTask = useUpdateTask();
+
+  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+    updateTask.mutate({ id: taskId, status: newStatus });
+  };
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
+
+  const StatusBadge = ({ task }: { task: DbTask }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Badge variant="secondary" className={`text-[10px] cursor-pointer transition-colors ${statusColors[task.status] || ""}`}>
+          {task.status}
+        </Badge>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuLabel className="text-xs">Change status</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {columns.map((s) => (
+          <DropdownMenuItem key={s} disabled={task.status === s} onClick={() => handleStatusChange(task.id, s)}>
+            <ArrowRight className="h-3 w-3 mr-2" />{s}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -86,7 +116,10 @@ export default function Tasks() {
                               </DropdownMenu>
                             </div>
                           </div>
-                          <p className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</p>
+                          <div className="flex items-center gap-2">
+                            <StatusBadge task={task} />
+                            <span className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</span>
+                          </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Avatar className="h-5 w-5">
@@ -134,7 +167,7 @@ export default function Tasks() {
                       <td className="p-3 text-sm text-muted-foreground">{project?.name || "—"}</td>
                       <td className="p-3 text-sm">{assignee?.full_name || "Unassigned"}</td>
                       <td className="p-3"><Badge variant="outline" className={`text-[10px] ${priorityColors[task.priority] || ""}`}>{task.priority}</Badge></td>
-                      <td className="p-3"><Badge variant="secondary" className="text-[10px]">{task.status}</Badge></td>
+                      <td className="p-3"><StatusBadge task={task} /></td>
                       <td className="p-3 text-sm text-muted-foreground">{task.due_date ? new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</td>
                       <td className="p-3">
                         <DropdownMenu>
