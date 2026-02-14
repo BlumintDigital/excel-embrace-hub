@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useProjects, useTasks, useProjectMembers, useTeamMembers, DbProject } from "@/hooks/use-supabase-data";
 import { useDeleteProject } from "@/hooks/use-supabase-mutations";
+import { usePermissions } from "@/hooks/use-permissions";
 import ProjectDialog from "@/components/dialogs/ProjectDialog";
 import ProjectMembersDialog from "@/components/dialogs/ProjectMembersDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
@@ -33,6 +34,7 @@ export default function Projects() {
   const { data: members = [] } = useProjectMembers();
   const { data: team = [] } = useTeamMembers();
   const deleteProject = useDeleteProject();
+  const { canCreateProjects, canEditAllProjects, canDeleteProjects } = usePermissions();
 
   if (lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -47,9 +49,11 @@ export default function Projects() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Projects</h1>
           <p className="text-muted-foreground mt-1">{projects.length} total projects</p>
         </div>
-        <Button onClick={() => { setEditProject(null); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" /> New Project
-        </Button>
+        {canCreateProjects && (
+          <Button onClick={() => { setEditProject(null); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" /> New Project
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">
@@ -85,9 +89,9 @@ export default function Projects() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setEditProject(project); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                            {canEditAllProjects && <DropdownMenuItem onClick={() => { setEditProject(project); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>}
                             <DropdownMenuItem onClick={() => setMembersProject(project)}><Users className="h-3.5 w-3.5 mr-2" />Members</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(project.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                            {canDeleteProjects && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(project.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

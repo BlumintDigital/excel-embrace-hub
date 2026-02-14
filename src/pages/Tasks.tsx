@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Loader2, Plus, MoreHorizontal, Pencil, Trash2, ArrowRight } from "lucide-react";
 import { useTasks, useTeamMembers, useProjects, DbTask } from "@/hooks/use-supabase-data";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-supabase-mutations";
+import { usePermissions } from "@/hooks/use-permissions";
 import TaskDialog from "@/components/dialogs/TaskDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
@@ -38,6 +39,7 @@ export default function Tasks() {
   const { data: projects = [] } = useProjects();
   const deleteTask = useDeleteTask();
   const updateTask = useUpdateTask();
+  const { canCreateTasks, canEditAllTasks, canDeleteAllTasks } = usePermissions();
 
   const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
     updateTask.mutate({ id: taskId, status: newStatus });
@@ -80,7 +82,7 @@ export default function Tasks() {
               <TabsTrigger value="list">List</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button onClick={() => { setEditTask(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />New Task</Button>
+          {canCreateTasks && <Button onClick={() => { setEditTask(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />New Task</Button>}
         </div>
       </div>
 
@@ -110,8 +112,8 @@ export default function Tasks() {
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
-                                  <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                                  {canEditAllTasks && <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>}
+                                  {canDeleteAllTasks && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -173,8 +175,8 @@ export default function Tasks() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                            {canEditAllTasks && <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>}
+                            {canDeleteAllTasks && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
