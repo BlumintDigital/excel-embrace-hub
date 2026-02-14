@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -9,9 +9,11 @@ import {
   DollarSign,
   Settings,
   HardHat,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
@@ -25,6 +27,17 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { profile, role, signOut } = useAuth();
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <aside className="flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
@@ -62,17 +75,24 @@ export function AppSidebar() {
       </nav>
 
       {/* User */}
-      <div className="border-t border-sidebar-border px-4 py-4">
+      <div className="border-t border-sidebar-border px-4 py-4 space-y-2">
         <Link to="/settings" className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">AR</AvatarFallback>
+            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Alex Rivera</p>
-            <p className="text-xs text-sidebar-muted truncate">Admin</p>
+            <p className="text-sm font-medium truncate">{profile?.full_name || "Loading..."}</p>
+            <p className="text-xs text-sidebar-muted truncate capitalize">{role || "Member"}</p>
           </div>
           <Settings className="h-4 w-4 text-sidebar-muted" />
         </Link>
+        <button
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
       </div>
     </aside>
   );

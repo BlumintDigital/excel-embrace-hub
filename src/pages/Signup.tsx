@@ -5,17 +5,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { HardHat } from "lucide-react";
+import { HardHat, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/");
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    setLoading(false);
+
+    if (error) {
+      toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Account created", description: "Check your email to confirm your account." });
+      navigate("/login");
+    }
   };
 
   return (
@@ -37,17 +57,20 @@ export default function Signup() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="Alex Rivera" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input id="name" placeholder="Alex Rivera" value={name} onChange={(e) => setName(e.target.value)} required disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="alex@pipeworks.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input id="email" type="email" placeholder="alex@pipeworks.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} />
               </div>
-              <Button type="submit" className="w-full">Create Account</Button>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Create Account
+              </Button>
             </form>
             <p className="text-center text-sm text-muted-foreground mt-4">
               Already have an account?{" "}
