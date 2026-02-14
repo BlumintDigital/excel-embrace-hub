@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logActivity } from "@/lib/activity-logger";
 
 // ── Projects ──
 export function useCreateProject() {
@@ -11,7 +12,7 @@ export function useCreateProject() {
       const { error } = await supabase.from("projects").insert({ ...data, created_by: user.user?.id ?? null, budget_actual: 0 });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project created"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project created"); logActivity({ action: "created", entity_type: "project", entity_name: data.name }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -23,7 +24,7 @@ export function useUpdateProject() {
       const { error } = await supabase.from("projects").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project updated"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project updated"); logActivity({ action: "updated", entity_type: "project", entity_name: data.name || "project", entity_id: data.id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -35,7 +36,7 @@ export function useDeleteProject() {
       const { error } = await supabase.from("projects").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project deleted"); },
+    onSuccess: (_v, id) => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project deleted"); logActivity({ action: "deleted", entity_type: "project", entity_id: id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -48,7 +49,7 @@ export function useCreateTask() {
       const { error } = await supabase.from("tasks").insert(data);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task created"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task created"); logActivity({ action: "created", entity_type: "task", entity_name: data.title }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -60,7 +61,7 @@ export function useUpdateTask() {
       const { error } = await supabase.from("tasks").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task updated"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task updated"); logActivity({ action: "updated", entity_type: "task", entity_id: data.id, details: data.status ? `Status → ${data.status}` : undefined }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -72,7 +73,7 @@ export function useDeleteTask() {
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task deleted"); },
+    onSuccess: (_v, id) => { qc.invalidateQueries({ queryKey: ["tasks"] }); toast.success("Task deleted"); logActivity({ action: "deleted", entity_type: "task", entity_id: id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -85,7 +86,7 @@ export function useCreateBudgetCategory() {
       const { error } = await supabase.from("budget_categories").insert(data);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["budget_categories"] }); toast.success("Category created"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["budget_categories"] }); toast.success("Category created"); logActivity({ action: "created", entity_type: "budget_category", entity_name: data.name }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -97,7 +98,7 @@ export function useUpdateBudgetCategory() {
       const { error } = await supabase.from("budget_categories").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["budget_categories"] }); toast.success("Category updated"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["budget_categories"] }); toast.success("Category updated"); logActivity({ action: "updated", entity_type: "budget_category", entity_id: data.id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -109,7 +110,7 @@ export function useDeleteBudgetCategory() {
       const { error } = await supabase.from("budget_categories").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["budget_categories"] }); toast.success("Category deleted"); },
+    onSuccess: (_v, id) => { qc.invalidateQueries({ queryKey: ["budget_categories"] }); toast.success("Category deleted"); logActivity({ action: "deleted", entity_type: "budget_category", entity_id: id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -123,7 +124,7 @@ export function useCreateDocument() {
       const { error } = await supabase.from("documents").insert({ ...data, uploaded_by: user.user?.id ?? null });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documents"] }); toast.success("Document created"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["documents"] }); toast.success("Document created"); logActivity({ action: "created", entity_type: "document", entity_name: data.name }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -135,7 +136,7 @@ export function useDeleteDocument() {
       const { error } = await supabase.from("documents").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["documents"] }); toast.success("Document deleted"); },
+    onSuccess: (_v, id) => { qc.invalidateQueries({ queryKey: ["documents"] }); toast.success("Document deleted"); logActivity({ action: "deleted", entity_type: "document", entity_id: id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -175,9 +176,10 @@ export function useInviteUser() {
       if (result?.error) throw new Error(result.error);
       return result;
     },
-    onSuccess: (data) => {
+    onSuccess: (result, data) => {
       qc.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("User invited successfully. Temp password: " + data.temp_password, { duration: 15000 });
+      toast.success("User invited successfully. Temp password: " + result.temp_password, { duration: 15000 });
+      logActivity({ action: "invited", entity_type: "user", entity_name: data.full_name, details: `Role: ${data.role}` });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -191,7 +193,7 @@ export function useUpdateUserRole() {
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("Role updated"); },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("Role updated"); logActivity({ action: "changed role", entity_type: "role", entity_id: data.user_id, details: `New role: ${data.role}` }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -204,7 +206,7 @@ export function useDeleteUser() {
       if (error) throw error;
       if (result?.error) throw new Error(result.error);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("User removed"); },
+    onSuccess: (_v, userId) => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("User removed"); logActivity({ action: "deleted", entity_type: "user", entity_id: userId }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
