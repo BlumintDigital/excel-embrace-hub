@@ -13,6 +13,7 @@ import Budget from "@/pages/Budget";
 import Timeline from "@/pages/Timeline";
 import Team from "@/pages/Team";
 import Documents from "@/pages/Documents";
+import UserGuide from "@/pages/UserGuide";
 import SettingsPage from "@/pages/SettingsPage";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/timeline" element={<Timeline />} />
                 <Route path="/team" element={<Team />} />
                 <Route path="/documents" element={<Documents />} />
+                <Route path="/guide" element={<UserGuide />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>
