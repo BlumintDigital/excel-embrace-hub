@@ -1,9 +1,14 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, Download, Eye, Loader2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FileText, Upload, Download, Eye, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 import { useDocuments, useProjects } from "@/hooks/use-supabase-data";
+import { useDeleteDocument } from "@/hooks/use-supabase-mutations";
+import DocumentDialog from "@/components/dialogs/DocumentDialog";
+import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
 const categoryIcons: Record<string, string> = {
   Drawings: "text-primary",
@@ -22,6 +27,9 @@ function formatFileSize(bytes: number): string {
 export default function Documents() {
   const { data: documents = [], isLoading } = useDocuments();
   const { data: projects = [] } = useProjects();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const deleteDoc = useDeleteDocument();
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -34,7 +42,7 @@ export default function Documents() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Documents</h1>
           <p className="text-muted-foreground mt-1">{documents.length} files across all projects</p>
         </div>
-        <Button>
+        <Button onClick={() => setDialogOpen(true)}>
           <Upload className="h-4 w-4 mr-2" /> Upload
         </Button>
       </div>
@@ -66,6 +74,12 @@ export default function Documents() {
                     <div className="flex gap-1 shrink-0">
                       <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8"><Download className="h-4 w-4" /></Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(doc.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
@@ -74,6 +88,9 @@ export default function Documents() {
           })}
         </div>
       )}
+
+      <DocumentDialog open={dialogOpen} onOpenChange={setDialogOpen} projects={projects} />
+      <DeleteConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteDoc.mutate(deleteId); setDeleteId(null); } }} title="Delete Document" />
     </div>
   );
 }

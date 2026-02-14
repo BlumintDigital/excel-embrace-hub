@@ -3,9 +3,14 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
-import { useTasks, useTeamMembers, useProjects } from "@/hooks/use-supabase-data";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Loader2, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useTasks, useTeamMembers, useProjects, DbTask } from "@/hooks/use-supabase-data";
+import { useDeleteTask } from "@/hooks/use-supabase-mutations";
+import TaskDialog from "@/components/dialogs/TaskDialog";
+import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
 type TaskStatus = "To Do" | "In Progress" | "Done";
 const columns: TaskStatus[] = ["To Do", "In Progress", "Done"];
@@ -18,9 +23,14 @@ const priorityColors: Record<string, string> = {
 
 export default function Tasks() {
   const [view, setView] = useState<"board" | "list">("board");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editTask, setEditTask] = useState<DbTask | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const { data: tasks = [], isLoading } = useTasks();
   const { data: team = [] } = useTeamMembers();
   const { data: projects = [] } = useProjects();
+  const deleteTask = useDeleteTask();
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -33,16 +43,19 @@ export default function Tasks() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Tasks</h1>
           <p className="text-muted-foreground mt-1">{tasks.length} total tasks across all projects</p>
         </div>
-        <Tabs value={view} onValueChange={(v) => setView(v as "board" | "list")}>
-          <TabsList>
-            <TabsTrigger value="board">Board</TabsTrigger>
-            <TabsTrigger value="list">List</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-3">
+          <Tabs value={view} onValueChange={(v) => setView(v as "board" | "list")}>
+            <TabsList>
+              <TabsTrigger value="board">Board</TabsTrigger>
+              <TabsTrigger value="list">List</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button onClick={() => { setEditTask(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />New Task</Button>
+        </div>
       </div>
 
       {tasks.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks yet. Tasks will appear here once created within projects.</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks yet. Create your first task to get started.</CardContent></Card>
       ) : view === "board" ? (
         <div className="grid gap-4 md:grid-cols-3">
           {columns.map((col) => {
@@ -58,11 +71,20 @@ export default function Tasks() {
                   const project = projects.find((p) => p.id === task.project_id);
                   return (
                     <motion.div key={task.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                      <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <Card className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4 space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-sm font-medium">{task.title}</p>
-                            <Badge variant="outline" className={`text-[10px] shrink-0 ${priorityColors[task.priority] || ""}`}>{task.priority}</Badge>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Badge variant="outline" className={`text-[10px] ${priorityColors[task.priority] || ""}`}>{task.priority}</Badge>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                           <p className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</p>
                           <div className="flex items-center justify-between">
@@ -99,6 +121,7 @@ export default function Tasks() {
                   <th className="p-3 font-medium">Priority</th>
                   <th className="p-3 font-medium">Status</th>
                   <th className="p-3 font-medium">Due</th>
+                  <th className="p-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -113,6 +136,15 @@ export default function Tasks() {
                       <td className="p-3"><Badge variant="outline" className={`text-[10px] ${priorityColors[task.priority] || ""}`}>{task.priority}</Badge></td>
                       <td className="p-3"><Badge variant="secondary" className="text-[10px]">{task.status}</Badge></td>
                       <td className="p-3 text-sm text-muted-foreground">{task.due_date ? new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</td>
+                      <td className="p-3">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
                     </tr>
                   );
                 })}
@@ -121,6 +153,9 @@ export default function Tasks() {
           </CardContent>
         </Card>
       )}
+
+      <TaskDialog open={dialogOpen} onOpenChange={setDialogOpen} task={editTask} projects={projects} team={team} />
+      <DeleteConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteTask.mutate(deleteId); setDeleteId(null); } }} title="Delete Task" />
     </div>
   );
 }
