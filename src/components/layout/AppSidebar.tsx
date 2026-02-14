@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,9 +11,12 @@ import {
   Settings,
   HardHat,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
@@ -29,6 +33,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, role, signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -39,17 +44,25 @@ export function AppSidebar() {
     navigate("/login");
   };
 
-  return (
-    <aside className="flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
+  const closeMobile = () => setMobileOpen(false);
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-          <HardHat className="h-5 w-5 text-sidebar-primary-foreground" />
+      <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-sidebar-border">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
+            <HardHat className="h-5 w-5 text-sidebar-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="font-heading text-lg font-bold tracking-tight">PipeFlow</h1>
+            <p className="text-xs text-sidebar-muted">Project Manager</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-heading text-lg font-bold tracking-tight">PipeFlow</h1>
-          <p className="text-xs text-sidebar-muted">Project Manager</p>
-        </div>
+        {/* Close button — mobile only */}
+        <Button variant="ghost" size="icon" className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent" onClick={closeMobile}>
+          <X className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Nav */}
@@ -60,6 +73,7 @@ export function AppSidebar() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={closeMobile}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
@@ -76,7 +90,7 @@ export function AppSidebar() {
 
       {/* User */}
       <div className="border-t border-sidebar-border px-4 py-4 space-y-2">
-        <Link to="/settings" className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors">
+        <Link to="/settings" onClick={closeMobile} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">{initials}</AvatarFallback>
           </Avatar>
@@ -94,6 +108,42 @@ export function AppSidebar() {
           Sign Out
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger trigger */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-3 left-3 z-50 lg:hidden bg-card shadow-md border border-border"
+        onClick={() => setMobileOpen(true)}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden" onClick={closeMobile}>
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+      )}
+
+      {/* Mobile sidebar (slide-in) */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-transform duration-300 lg:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar (always visible) */}
+      <aside className="hidden lg:flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
