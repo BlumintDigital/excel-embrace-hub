@@ -114,14 +114,19 @@ export function AppSidebar() {
   return (
     <>
       {/* Mobile hamburger trigger */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-3 left-3 z-50 lg:hidden bg-card shadow-md border border-border"
-        onClick={() => setMobileOpen(true)}
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-4 bg-card border-b border-border lg:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-2 ml-2">
+          <HardHat className="h-5 w-5 text-primary" />
+          <span className="font-heading font-bold">PipeFlow</span>
+        </div>
+      </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
