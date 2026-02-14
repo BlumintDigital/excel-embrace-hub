@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Filter, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useProjects, useTasks, useProjectMembers, useTeamMembers } from "@/hooks/use-supabase-data";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useProjects, useTasks, useProjectMembers, useTeamMembers, DbProject } from "@/hooks/use-supabase-data";
+import { useDeleteProject } from "@/hooks/use-supabase-mutations";
+import ProjectDialog from "@/components/dialogs/ProjectDialog";
+import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 
 const statusColors: Record<string, string> = {
   "Planning": "bg-warning/15 text-warning border-warning/30",
@@ -18,18 +22,21 @@ const statusColors: Record<string, string> = {
 
 export default function Projects() {
   const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editProject, setEditProject] = useState<DbProject | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
   const { data: projects = [], isLoading: lp } = useProjects();
   const { data: tasks = [] } = useTasks();
   const { data: members = [] } = useProjectMembers();
   const { data: team = [] } = useTeamMembers();
+  const deleteProject = useDeleteProject();
 
   if (lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  const filtered = projects.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -38,7 +45,7 @@ export default function Projects() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">Projects</h1>
           <p className="text-muted-foreground mt-1">{projects.length} total projects</p>
         </div>
-        <Button>
+        <Button onClick={() => { setEditProject(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" /> New Project
         </Button>
       </div>
@@ -64,14 +71,23 @@ export default function Projects() {
 
             return (
               <motion.div key={project.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card className="hover:shadow-md transition-shadow">
                   <CardContent className="p-5 space-y-4">
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <h3 className="font-heading font-semibold">{project.name}</h3>
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{project.description}</p>
                       </div>
-                      <Badge variant="outline" className={statusColors[project.status]}>{project.status}</Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Badge variant="outline" className={statusColors[project.status]}>{project.status}</Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setEditProject(project); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(project.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -101,6 +117,9 @@ export default function Projects() {
           })}
         </div>
       )}
+
+      <ProjectDialog open={dialogOpen} onOpenChange={setDialogOpen} project={editProject} />
+      <DeleteConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteProject.mutate(deleteId); setDeleteId(null); } }} title="Delete Project" description="This will permanently delete the project and cannot be undone." />
     </div>
   );
 }
