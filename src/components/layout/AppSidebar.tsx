@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   BookOpen,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -29,6 +30,7 @@ const navItems = [
   { label: "Team", icon: Users, path: "/team" },
   { label: "Documents", icon: FileText, path: "/documents" },
   { label: "User Guide", icon: BookOpen, path: "/guide" },
+  { label: "Activity Log", icon: Activity, path: "/activity" },
 ];
 
 export function AppSidebar() {
