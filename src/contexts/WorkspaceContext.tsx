@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CurrencyOption {
   code: string;
@@ -42,6 +43,7 @@ const STORAGE_KEY = "blumint_workspace_settings";
 interface WorkspaceContextValue {
   settings: WorkspaceSettings;
   updateSettings: (patch: Partial<WorkspaceSettings>) => void;
+  loading: boolean;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
@@ -55,17 +57,59 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       return DEFAULT_SETTINGS;
     }
   });
+  const [loading, setLoading] = useState(true);
 
+  // Fetch settings from database on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("workspace_settings")
+          .select("setting_value")
+          .eq("setting_key", "workspace")
+          .maybeSingle();
+
+        if (!error && data?.setting_value) {
+          const dbSettings = { ...DEFAULT_SETTINGS, ...(data.setting_value as Partial<WorkspaceSettings>) };
+          setSettings(dbSettings);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(dbSettings));
+        }
+      } catch {
+        // Fall back to localStorage (already loaded in initial state)
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Sync to localStorage whenever settings change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  const updateSettings = (patch: Partial<WorkspaceSettings>) => {
-    setSettings((prev) => ({ ...prev, ...patch }));
+  const updateSettings = async (patch: Partial<WorkspaceSettings>) => {
+    const newSettings = { ...settings, ...patch };
+    setSettings(newSettings);
+
+    // Persist to database
+    try {
+      const { error } = await supabase
+        .from("workspace_settings")
+        .update({ setting_value: newSettings as any, updated_at: new Date().toISOString() })
+        .eq("setting_key", "workspace");
+
+      if (error) {
+        console.error("Failed to save workspace settings to database:", error.message);
+      }
+    } catch (err) {
+      console.error("Failed to save workspace settings:", err);
+    }
   };
 
   return (
-    <WorkspaceContext.Provider value={{ settings, updateSettings }}>
+    <WorkspaceContext.Provider value={{ settings, updateSettings, loading }}>
       {children}
     </WorkspaceContext.Provider>
   );
