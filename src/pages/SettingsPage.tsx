@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -25,16 +27,18 @@ import logoColor from "@/assets/logo-color.png";
 
 export default function SettingsPage() {
   const { user, profile, role } = useAuth();
+  const { settings, updateSettings } = useWorkspace();
 
   // Profile state
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
 
-  // Company customization state
-  const [companyName, setCompanyName] = useState("Blumint Workspace");
-  const [companyTagline, setCompanyTagline] = useState("Project Management Platform");
-  const [primaryColor, setPrimaryColor] = useState("#5B4FE8");
-  const [accentColor, setAccentColor] = useState("#4DD9AC");
+  // Local workspace form state (synced from context)
+  const [companyName, setCompanyName] = useState(settings.companyName);
+  const [companyTagline, setCompanyTagline] = useState(settings.companyTagline);
+  const [primaryColor, setPrimaryColor] = useState(settings.primaryColor);
+  const [accentColor, setAccentColor] = useState(settings.accentColor);
+  const [sidebarStyle, setSidebarStyle] = useState(settings.sidebarStyle);
 
   // Notification preferences
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -65,7 +69,8 @@ export default function SettingsPage() {
   };
 
   const handleSaveCompany = () => {
-    toast.success("Company settings saved");
+    updateSettings({ companyName, companyTagline });
+    toast.success("Workspace settings saved");
   };
 
   const handleSaveNotifications = () => {
@@ -425,10 +430,14 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <Label>Sidebar Style</Label>
                 <div className="grid grid-cols-3 gap-3">
-                  {["Dark", "Light", "Branded"].map((style) => (
+                  {(["Dark", "Light", "Branded"] as const).map((style) => (
                     <button
                       key={style}
-                      className="rounded-lg border-2 border-border p-3 text-center text-sm font-medium hover:border-primary transition-colors focus:border-primary focus:outline-none"
+                      onClick={() => setSidebarStyle(style)}
+                      className={cn(
+                        "rounded-lg border-2 p-3 text-center text-sm font-medium transition-colors focus:outline-none",
+                        sidebarStyle === style ? "border-primary bg-primary/5" : "border-border hover:border-primary"
+                      )}
                     >
                       {style}
                     </button>
@@ -437,7 +446,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={() => toast.success("Appearance settings saved")} className="gap-2">
+                <Button onClick={() => { updateSettings({ primaryColor, accentColor, sidebarStyle }); toast.success("Appearance settings saved"); }} className="gap-2">
                   <Save className="h-4 w-4" /> Save Appearance
                 </Button>
               </div>
