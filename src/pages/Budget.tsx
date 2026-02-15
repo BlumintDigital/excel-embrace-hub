@@ -11,6 +11,7 @@ import { useDeleteBudgetCategory } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
 import BudgetCategoryDialog from "@/components/dialogs/BudgetCategoryDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
+import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
 
 const PIE_COLORS = ["hsl(243, 75%, 59%)", "hsl(167, 72%, 60%)", "hsl(38, 92%, 50%)", "hsl(142, 76%, 36%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 60%)"];
 
@@ -25,6 +26,11 @@ export default function Budget() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteCat = useDeleteBudgetCategory();
   const { canManageBudget } = usePermissions();
+
+  const { settings } = useWorkspace();
+  const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
+  const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
+  const fmtK = (v: number) => `${cur.symbol}${(v / 1000).toFixed(0)}k`;
 
   if (lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -66,9 +72,9 @@ export default function Budget() {
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: "Projected Budget", value: `$${(totalProjected / 1000).toFixed(0)}k`, icon: DollarSign, color: "text-primary" },
-          { label: "Actual Spent", value: `$${(totalActual / 1000).toFixed(0)}k`, icon: percentUsed > 80 ? TrendingDown : TrendingUp, color: percentUsed > 80 ? "text-destructive" : "text-success" },
-          { label: "Remaining", value: `$${(difference / 1000).toFixed(0)}k`, icon: difference < 0 ? AlertTriangle : DollarSign, color: difference < 0 ? "text-destructive" : "text-success" },
+          { label: "Projected Budget", value: fmtK(totalProjected), icon: DollarSign, color: "text-primary" },
+          { label: "Actual Spent", value: fmtK(totalActual), icon: percentUsed > 80 ? TrendingDown : TrendingUp, color: percentUsed > 80 ? "text-destructive" : "text-success" },
+          { label: "Remaining", value: fmtK(difference), icon: difference < 0 ? AlertTriangle : DollarSign, color: difference < 0 ? "text-destructive" : "text-success" },
         ].map((card, i) => (
           <motion.div key={card.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
             <Card>
@@ -89,7 +95,7 @@ export default function Budget() {
         <>
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="lg:col-span-2">
-              <CardHeader><CardTitle className="text-lg">Category Comparison (in $K)</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-lg">Category Comparison (in {cur.code})</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={barData} barGap={4}>
@@ -143,9 +149,9 @@ export default function Budget() {
                     return (
                       <tr key={cat.id} className="border-b last:border-0 hover:bg-muted/50">
                         <td className="p-3 text-sm font-medium">{cat.name}</td>
-                        <td className="p-3 text-sm text-right">${(cat.projected || 0).toLocaleString()}</td>
-                        <td className="p-3 text-sm text-right">${(cat.actual || 0).toLocaleString()}</td>
-                        <td className={`p-3 text-sm text-right font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}${diff.toLocaleString()}</td>
+                        <td className="p-3 text-sm text-right">{fmt(cat.projected || 0)}</td>
+                        <td className="p-3 text-sm text-right">{fmt(cat.actual || 0)}</td>
+                        <td className={`p-3 text-sm text-right font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}{fmt(diff)}</td>
                         <td className="p-3 text-sm text-right">{pct}%</td>
                         <td className="p-3">
                           {canManageBudget && (
@@ -163,9 +169,9 @@ export default function Budget() {
                   })}
                   <tr className="bg-muted/50 font-semibold">
                     <td className="p-3 text-sm">Total</td>
-                    <td className="p-3 text-sm text-right">${totalProjected.toLocaleString()}</td>
-                    <td className="p-3 text-sm text-right">${totalActual.toLocaleString()}</td>
-                    <td className={`p-3 text-sm text-right ${difference >= 0 ? "text-success" : "text-destructive"}`}>{difference >= 0 ? "+" : ""}${difference.toLocaleString()}</td>
+                    <td className="p-3 text-sm text-right">{fmt(totalProjected)}</td>
+                    <td className="p-3 text-sm text-right">{fmt(totalActual)}</td>
+                    <td className={`p-3 text-sm text-right ${difference >= 0 ? "text-success" : "text-destructive"}`}>{difference >= 0 ? "+" : ""}{fmt(difference)}</td>
                     <td className="p-3 text-sm text-right">{percentUsed}%</td>
                     <td></td>
                   </tr>
