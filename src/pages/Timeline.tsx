@@ -15,18 +15,33 @@ export default function Timeline() {
   const { data: projects = [], isLoading: lp } = useProjects();
   const { data: team = [] } = useTeamMembers();
 
-  const tasksWithDates = useMemo(() => tasks.filter((t) => t.start_date && t.due_date), [tasks]);
+  // Include all tasks: if missing start_date/due_date, derive sensible defaults
+  const normalizedTasks = useMemo(() => {
+    return tasks.map((t) => {
+      const start = t.start_date
+        ? new Date(t.start_date)
+        : t.due_date
+          ? new Date(new Date(t.due_date).getTime() - 7 * 24 * 60 * 60 * 1000)
+          : new Date(t.created_at);
+      const end = t.due_date
+        ? new Date(t.due_date)
+        : t.start_date
+          ? new Date(new Date(t.start_date).getTime() + 7 * 24 * 60 * 60 * 1000)
+          : new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return { ...t, _start: start, _end: end };
+    });
+  }, [tasks]);
 
   const { minDate, maxDate, totalDays } = useMemo(() => {
-    if (tasksWithDates.length === 0) return { minDate: new Date(), maxDate: new Date(), totalDays: 1 };
-    const dates = tasksWithDates.flatMap((t) => [new Date(t.start_date!), new Date(t.due_date!)]);
-    const min = new Date(Math.min(...dates.map((d) => d.getTime())));
-    const max = new Date(Math.max(...dates.map((d) => d.getTime())));
+    if (normalizedTasks.length === 0) return { minDate: new Date(), maxDate: new Date(), totalDays: 1 };
+    const allDates = normalizedTasks.flatMap((t) => [t._start, t._end]);
+    const min = new Date(Math.min(...allDates.map((d) => d.getTime())));
+    const max = new Date(Math.max(...allDates.map((d) => d.getTime())));
     return { minDate: min, maxDate: max, totalDays: Math.max((max.getTime() - min.getTime()) / (1000 * 60 * 60 * 24), 1) };
-  }, [tasksWithDates]);
+  }, [normalizedTasks]);
 
   const months = useMemo(() => {
-    if (tasksWithDates.length === 0) return [];
+    if (normalizedTasks.length === 0) return [];
     const result: { label: string; startPercent: number }[] = [];
     const d = new Date(minDate);
     d.setDate(1);
@@ -36,14 +51,21 @@ export default function Timeline() {
       d.setMonth(d.getMonth() + 1);
     }
     return result;
-  }, [minDate, maxDate, totalDays, tasksWithDates]);
+  }, [minDate, maxDate, totalDays, normalizedTasks]);
 
   const groupedByProject = useMemo(() => {
-    return projects.map((p) => ({
+    const grouped = projects.map((p) => ({
       project: p,
-      tasks: tasksWithDates.filter((t) => t.project_id === p.id),
+      tasks: normalizedTasks.filter((t) => t.project_id === p.id),
     })).filter((g) => g.tasks.length > 0);
-  }, [projects, tasksWithDates]);
+
+    // Also include tasks not assigned to any project
+    const unassigned = normalizedTasks.filter((t) => !t.project_id);
+    if (unassigned.length > 0) {
+      grouped.push({ project: { id: "__unassigned", name: "Unassigned" } as any, tasks: unassigned });
+    }
+    return grouped;
+  }, [projects, normalizedTasks]);
 
   if (lt || lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -66,7 +88,7 @@ export default function Timeline() {
       </div>
 
       {groupedByProject.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks with dates to display on the timeline.</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks to display on the timeline.</CardContent></Card>
       ) : (
         <Card>
           <CardContent className="p-4 overflow-x-auto">
@@ -84,8 +106,8 @@ export default function Timeline() {
                   <h3 className="font-heading font-semibold text-sm mb-2">{project.name}</h3>
                   <div className="space-y-1.5">
                     {pTasks.map((task, i) => {
-                      const start = (new Date(task.start_date!).getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24);
-                      const end = (new Date(task.due_date!).getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24);
+                      const start = (task._start.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24);
+                      const end = (task._end.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24);
                       const left = (start / totalDays) * 100;
                       const width = ((end - start) / totalDays) * 100;
                       const assignee = team.find((u) => u.id === task.assignee_id);
@@ -105,7 +127,7 @@ export default function Timeline() {
                               width: `${Math.max(width, 2)}%`,
                               background: statusColors[task.status] || statusColors["To Do"],
                             }}
-                            title={`${task.title} — ${assignee?.full_name || "Unassigned"}`}
+                            title={`${task.title} — ${assignee?.full_name || "Unassigned"}${!task.start_date || !task.due_date ? " (estimated dates)" : ""}`}
                           >
                             {width > 8 && task.title}
                           </div>
