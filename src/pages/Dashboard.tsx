@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useProjects, useTasks, useTeamMembers } from "@/hooks/use-supabase-data";
+import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
 
 const statusColors: Record<string, string> = {
   "Planning": "bg-warning/15 text-warning border-warning/30",
@@ -23,6 +24,8 @@ export default function Dashboard() {
   const { data: projects = [], isLoading: loadingProjects } = useProjects();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
   const { data: teamMembers = [], isLoading: loadingTeam } = useTeamMembers();
+  const { settings } = useWorkspace();
+  const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
 
   const isLoading = loadingProjects || loadingTasks || loadingTeam;
 
@@ -55,7 +58,7 @@ export default function Dashboard() {
   const cards = [
   { label: "Active Projects", value: activeProjects, icon: FolderKanban, trend: `${projects.length} total`, up: true },
   { label: "Active Tasks", value: activeTasks, icon: ListTodo, trend: `${tasks.length} total`, up: false },
-  { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, trend: `$${(totalBudgetActual / 1000).toFixed(0)}k of $${(totalBudgetProjected / 1000).toFixed(0)}k`, up: Number(budgetHealth) < 60 },
+  { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, trend: `${cur.symbol}${(totalBudgetActual / 1000).toFixed(0)}k of ${cur.symbol}${(totalBudgetProjected / 1000).toFixed(0)}k`, up: Number(budgetHealth) < 60 },
   { label: "Team Members", value: teamMembers.length, icon: Users, trend: "All active", up: true }];
 
 
@@ -109,7 +112,7 @@ export default function Dashboard() {
             <motion.div className="lg:col-span-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Budget Overview (in $K)</CardTitle>
+                  <CardTitle className="text-lg">Budget Overview (in {cur.code})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={280}>
