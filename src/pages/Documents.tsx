@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FileText, Upload, Download, Eye, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 import { useDocuments, useProjects } from "@/hooks/use-supabase-data";
@@ -30,8 +31,11 @@ export default function Documents() {
   const { data: projects = [] } = useProjects();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string>("all");
   const deleteDoc = useDeleteDocument();
   const { canManageDocuments } = usePermissions();
+
+  const filteredDocs = selectedProject === "all" ? documents : documents.filter((d) => d.project_id === selectedProject);
 
   if (isLoading) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -39,23 +43,36 @@ export default function Documents() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground mt-1">{documents.length} files across all projects</p>
+          <p className="text-muted-foreground mt-1">{filteredDocs.length} files{selectedProject !== "all" ? "" : " across all projects"}</p>
         </div>
-        {canManageDocuments && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" /> Upload
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {canManageDocuments && (
+            <Button onClick={() => setDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Upload
+            </Button>
+          )}
+        </div>
       </div>
 
-      {documents.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No documents yet. Upload files to get started.</CardContent></Card>
+      {filteredDocs.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-muted-foreground">No documents{selectedProject !== "all" ? " for this project" : ""}. Upload files to get started.</CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {documents.map((doc, i) => {
+          {filteredDocs.map((doc, i) => {
             const project = projects.find((p) => p.id === doc.project_id);
             return (
               <motion.div key={doc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
@@ -68,7 +85,7 @@ export default function Documents() {
                       <p className="text-sm font-medium truncate">{doc.name}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {doc.category && <Badge variant="secondary" className="text-[10px]">{doc.category}</Badge>}
-                        <span className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</span>
+                        {selectedProject === "all" && <span className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</span>}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
@@ -81,7 +98,7 @@ export default function Documents() {
                       {canManageDocuments && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="bg-popover z-50">
                             <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(doc.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
