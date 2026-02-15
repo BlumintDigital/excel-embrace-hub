@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { HardHat, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import logoColor from "@/assets/logo-color.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,17 +42,14 @@ export default function Signup() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <HardHat className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <h1 className="font-heading text-2xl font-bold">PipeFlow</h1>
+        <div className="flex items-center justify-center mb-8">
+          <img src={logoColor} alt="Blumint Workspace" className="h-10" />
         </div>
 
         <Card>
           <CardHeader className="text-center">
             <CardTitle>Create account</CardTitle>
-            <CardDescription>Get started with PipeFlow</CardDescription>
+            <CardDescription>Get started with Blumint Workspace</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
