@@ -1,11 +1,31 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+export interface CurrencyOption {
+  code: string;
+  symbol: string;
+  name: string;
+}
+
+export const CURRENCIES: CurrencyOption[] = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "CAD", symbol: "CA$", name: "Canadian Dollar" },
+  { code: "KES", symbol: "KSh", name: "Kenyan Shilling" },
+  { code: "GHS", symbol: "GH₵", name: "Ghanaian Cedi" },
+  { code: "ZAR", symbol: "R", name: "South African Rand" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+];
+
 export interface WorkspaceSettings {
   companyName: string;
   companyTagline: string;
   primaryColor: string;
   accentColor: string;
   sidebarStyle: "Dark" | "Light" | "Branded";
+  currency: string;
 }
 
 const DEFAULT_SETTINGS: WorkspaceSettings = {
@@ -14,6 +34,7 @@ const DEFAULT_SETTINGS: WorkspaceSettings = {
   primaryColor: "#5B4FE8",
   accentColor: "#4DD9AC",
   sidebarStyle: "Dark",
+  currency: "USD",
 };
 
 const STORAGE_KEY = "blumint_workspace_settings";

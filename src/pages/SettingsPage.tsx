@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -39,6 +40,7 @@ export default function SettingsPage() {
   const [primaryColor, setPrimaryColor] = useState(settings.primaryColor);
   const [accentColor, setAccentColor] = useState(settings.accentColor);
   const [sidebarStyle, setSidebarStyle] = useState(settings.sidebarStyle);
+  const [currency, setCurrency] = useState(settings.currency);
 
   // Notification preferences
   const [emailNotifs, setEmailNotifs] = useState(true);
@@ -69,7 +71,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveCompany = () => {
-    updateSettings({ companyName, companyTagline });
+    updateSettings({ companyName, companyTagline, currency });
     toast.success("Workspace settings saved");
   };
 
@@ -280,6 +282,25 @@ export default function SettingsPage() {
                   <Label htmlFor="companyWebsite">Website</Label>
                   <Input id="companyWebsite" placeholder="https://example.com" />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Currency</Label>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.symbol} — {c.name} ({c.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This currency will be used across all budget displays
+                </p>
               </div>
 
               <div className="flex justify-end">
