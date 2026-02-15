@@ -65,9 +65,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { error } = await adminClient
+    // Try update first, then insert if no existing row
+    const { data: existing } = await adminClient
       .from("user_roles")
-      .upsert({ user_id, role }, { onConflict: "user_id" });
+      .select("id")
+      .eq("user_id", user_id)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      ({ error } = await adminClient
+        .from("user_roles")
+        .update({ role })
+        .eq("user_id", user_id));
+    } else {
+      ({ error } = await adminClient
+        .from("user_roles")
+        .insert({ user_id, role }));
+    }
 
     if (error) throw error;
 
