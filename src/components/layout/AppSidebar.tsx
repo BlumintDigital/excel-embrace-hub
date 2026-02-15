@@ -9,13 +9,14 @@ import {
   FileText,
   DollarSign,
   Settings,
-  HardHat,
   LogOut,
   Menu,
   X,
   BookOpen,
   Activity,
 } from "lucide-react";
+import logoWhite from "@/assets/logo-white.png";
+import logoColor from "@/assets/logo-color.png";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -55,13 +56,7 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-            <HardHat className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-heading text-lg font-bold tracking-tight">PipeFlow</h1>
-            <p className="text-xs text-sidebar-muted">Project Manager</p>
-          </div>
+          <img src={logoWhite} alt="Blumint Workspace" className="h-8" />
         </div>
         {/* Close button — mobile only */}
         <Button variant="ghost" size="icon" className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent" onClick={closeMobile}>
@@ -127,8 +122,7 @@ export function AppSidebar() {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2 ml-2">
-          <HardHat className="h-5 w-5 text-primary" />
-          <span className="font-heading font-bold">PipeFlow</span>
+          <img src={logoColor} alt="Blumint Workspace" className="h-6" />
         </div>
       </div>
 
