@@ -10,7 +10,7 @@ const statusColors: Record<string, string> = {
   "Planning": "bg-warning/15 text-warning border-warning/30",
   "In Progress": "bg-primary/15 text-primary border-primary/30",
   "Completed": "bg-success/15 text-success border-success/30",
-  "On Hold": "bg-muted text-muted-foreground border-muted",
+  "On Hold": "bg-muted text-muted-foreground border-muted"
 };
 
 const PIE_COLORS = ["hsl(243, 75%, 59%)", "hsl(167, 72%, 60%)", "hsl(38, 92%, 50%)", "hsl(142, 76%, 36%)"];
@@ -30,44 +30,44 @@ export default function Dashboard() {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>);
+
   }
 
   const activeProjects = projects.filter((p) => p.status !== "Completed").length;
   const activeTasks = tasks.filter((t) => t.status !== "Done").length;
   const totalBudgetProjected = projects.reduce((s, p) => s + (p.budget_projected || 0), 0);
   const totalBudgetActual = projects.reduce((s, p) => s + (p.budget_actual || 0), 0);
-  const budgetHealth = totalBudgetProjected > 0 ? ((totalBudgetActual / totalBudgetProjected) * 100).toFixed(0) : "0";
+  const budgetHealth = totalBudgetProjected > 0 ? (totalBudgetActual / totalBudgetProjected * 100).toFixed(0) : "0";
 
   const budgetChartData = projects.map((p) => ({
     name: p.name.split(" ").slice(0, 2).join(" "),
     Projected: (p.budget_projected || 0) / 1000,
-    Actual: (p.budget_actual || 0) / 1000,
+    Actual: (p.budget_actual || 0) / 1000
   }));
 
   const taskDistribution = [
-    { name: "To Do", value: tasks.filter((t) => t.status === "To Do").length },
-    { name: "In Progress", value: tasks.filter((t) => t.status === "In Progress").length },
-    { name: "Done", value: tasks.filter((t) => t.status === "Done").length },
-  ];
+  { name: "To Do", value: tasks.filter((t) => t.status === "To Do").length },
+  { name: "In Progress", value: tasks.filter((t) => t.status === "In Progress").length },
+  { name: "Done", value: tasks.filter((t) => t.status === "Done").length }];
+
 
   const cards = [
-    { label: "Active Projects", value: activeProjects, icon: FolderKanban, trend: `${projects.length} total`, up: true },
-    { label: "Active Tasks", value: activeTasks, icon: ListTodo, trend: `${tasks.length} total`, up: false },
-    { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, trend: `$${(totalBudgetActual / 1000).toFixed(0)}k of $${(totalBudgetProjected / 1000).toFixed(0)}k`, up: Number(budgetHealth) < 60 },
-    { label: "Team Members", value: teamMembers.length, icon: Users, trend: "All active", up: true },
-  ];
+  { label: "Active Projects", value: activeProjects, icon: FolderKanban, trend: `${projects.length} total`, up: true },
+  { label: "Active Tasks", value: activeTasks, icon: ListTodo, trend: `${tasks.length} total`, up: false },
+  { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, trend: `$${(totalBudgetActual / 1000).toFixed(0)}k of $${(totalBudgetProjected / 1000).toFixed(0)}k`, up: Number(budgetHealth) < 60 },
+  { label: "Team Members", value: teamMembers.length, icon: Users, trend: "All active", up: true }];
+
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
       <div>
         <h1 className="font-heading text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of your piping projects</p>
+        <p className="text-muted-foreground mt-1">Overview of your projects</p>
       </div>
 
-      {projects.length === 0 && tasks.length === 0 ? (
-        <Card>
+      {projects.length === 0 && tasks.length === 0 ?
+      <Card>
           <CardContent className="p-8 text-center">
             <FolderKanban className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-heading font-semibold text-lg">No data yet</h3>
@@ -78,13 +78,13 @@ export default function Dashboard() {
               </motion.div>
             </Link>
           </CardContent>
-        </Card>
-      ) : (
-        <>
+        </Card> :
+
+      <>
           {/* Summary Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {cards.map((card, i) => (
-              <motion.div key={card.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+            {cards.map((card, i) =>
+          <motion.div key={card.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
                 <Card className="relative overflow-hidden">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
@@ -101,7 +101,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </motion.div>
-            ))}
+          )}
           </div>
 
           {/* Charts Row */}
@@ -135,20 +135,20 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie data={taskDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
-                        {taskDistribution.map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i]} />
-                        ))}
+                        {taskDistribution.map((_, i) =>
+                      <Cell key={i} fill={PIE_COLORS[i]} />
+                      )}
                       </Pie>
                       <Tooltip contentStyle={{ borderRadius: "0.75rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="flex gap-4 mt-2">
-                    {taskDistribution.map((item, i) => (
-                      <div key={item.name} className="flex items-center gap-1.5 text-xs">
+                    {taskDistribution.map((item, i) =>
+                  <div key={item.name} className="flex items-center gap-1.5 text-xs">
                         <div className="h-2.5 w-2.5 rounded-full" style={{ background: PIE_COLORS[i] }} />
                         {item.name} ({item.value})
                       </div>
-                    ))}
+                  )}
                   </div>
                 </CardContent>
               </Card>
@@ -166,10 +166,10 @@ export default function Dashboard() {
                   </Link>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {projects.filter(p => p.status !== "Completed").slice(0, 5).map((project) => {
-                    const progress = project.budget_projected > 0 ? Math.round(((project.budget_actual || 0) / project.budget_projected) * 100) : 0;
-                    return (
-                      <div key={project.id} className="flex items-center justify-between rounded-lg border p-3">
+                  {projects.filter((p) => p.status !== "Completed").slice(0, 5).map((project) => {
+                  const progress = project.budget_projected > 0 ? Math.round((project.budget_actual || 0) / project.budget_projected * 100) : 0;
+                  return (
+                    <div key={project.id} className="flex items-center justify-between rounded-lg border p-3">
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm truncate">{project.name}</p>
                           <div className="flex items-center gap-2 mt-1">
@@ -182,12 +182,12 @@ export default function Dashboard() {
                         <div className="h-2 w-20 rounded-full bg-muted overflow-hidden ml-4">
                           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
                         </div>
-                      </div>
-                    );
-                  })}
-                  {projects.filter(p => p.status !== "Completed").length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">No active projects</p>
-                  )}
+                      </div>);
+
+                })}
+                  {projects.filter((p) => p.status !== "Completed").length === 0 &&
+                <p className="text-sm text-muted-foreground text-center py-4">No active projects</p>
+                }
                 </CardContent>
               </Card>
             </motion.div>
@@ -200,9 +200,9 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="space-y-4">
                     {tasks.slice(0, 5).map((task) => {
-                      const project = projects.find((p) => p.id === task.project_id);
-                      return (
-                        <div key={task.id} className="flex gap-3">
+                    const project = projects.find((p) => p.id === task.project_id);
+                    return (
+                      <div key={task.id} className="flex gap-3">
                           <div className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
                           <div className="min-w-0">
                             <p className="text-sm">
@@ -213,19 +213,19 @@ export default function Dashboard() {
                               {project?.name || "Unassigned"} · {task.priority} priority
                             </p>
                           </div>
-                        </div>
-                      );
-                    })}
-                    {tasks.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">No tasks yet</p>
-                    )}
+                        </div>);
+
+                  })}
+                    {tasks.length === 0 &&
+                  <p className="text-sm text-muted-foreground text-center py-4">No tasks yet</p>
+                  }
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
           </div>
         </>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
