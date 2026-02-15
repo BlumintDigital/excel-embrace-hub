@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { Loader2, Plus, MoreHorizontal, Pencil, Trash2, ArrowRight } from "lucide-react";
 import { useTasks, useTeamMembers, useProjects, DbTask } from "@/hooks/use-supabase-data";
@@ -33,6 +34,7 @@ export default function Tasks() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTask, setEditTask] = useState<DbTask | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string>("all");
 
   const { data: tasks = [], isLoading } = useTasks();
   const { data: team = [] } = useTeamMembers();
@@ -40,6 +42,8 @@ export default function Tasks() {
   const deleteTask = useDeleteTask();
   const updateTask = useUpdateTask();
   const { canCreateTasks, canEditAllTasks, canDeleteAllTasks } = usePermissions();
+
+  const filteredTasks = selectedProject === "all" ? tasks : tasks.filter((t) => t.project_id === selectedProject);
 
   const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
     updateTask.mutate({ id: taskId, status: newStatus });
@@ -56,7 +60,7 @@ export default function Tasks() {
           {task.status}
         </Badge>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className="bg-popover z-50">
         <DropdownMenuLabel className="text-xs">Change status</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map((s) => (
@@ -70,12 +74,23 @@ export default function Tasks() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-heading text-3xl font-bold tracking-tight">Tasks</h1>
-          <p className="text-muted-foreground mt-1">{tasks.length} total tasks across all projects</p>
+          <p className="text-muted-foreground mt-1">{filteredTasks.length} tasks{selectedProject !== "all" ? "" : " across all projects"}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Tabs value={view} onValueChange={(v) => setView(v as "board" | "list")}>
             <TabsList>
               <TabsTrigger value="board">Board</TabsTrigger>
@@ -86,12 +101,12 @@ export default function Tasks() {
         </div>
       </div>
 
-      {tasks.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks yet. Create your first task to get started.</CardContent></Card>
+      {filteredTasks.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-muted-foreground">No tasks{selectedProject !== "all" ? " for this project" : ""}. Create your first task to get started.</CardContent></Card>
       ) : view === "board" ? (
         <div className="grid gap-4 md:grid-cols-3">
           {columns.map((col) => {
-            const colTasks = tasks.filter((t) => t.status === col);
+            const colTasks = filteredTasks.filter((t) => t.status === col);
             return (
               <div key={col} className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -111,7 +126,7 @@ export default function Tasks() {
                               <Badge variant="outline" className={`text-[10px] ${priorityColors[task.priority] || ""}`}>{task.priority}</Badge>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6"><MoreHorizontal className="h-3.5 w-3.5" /></Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
+                                <DropdownMenuContent align="end" className="bg-popover z-50">
                                   {canEditAllTasks && <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>}
                                   {canDeleteAllTasks && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>}
                                 </DropdownMenuContent>
@@ -120,7 +135,7 @@ export default function Tasks() {
                           </div>
                           <div className="flex items-center gap-2">
                             <StatusBadge task={task} />
-                            <span className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</span>
+                            {selectedProject === "all" && <span className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</span>}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -151,7 +166,7 @@ export default function Tasks() {
               <thead>
                 <tr className="border-b text-left text-xs text-muted-foreground">
                   <th className="p-3 font-medium">Task</th>
-                  <th className="p-3 font-medium">Project</th>
+                  {selectedProject === "all" && <th className="p-3 font-medium">Project</th>}
                   <th className="p-3 font-medium">Assignee</th>
                   <th className="p-3 font-medium">Priority</th>
                   <th className="p-3 font-medium">Status</th>
@@ -160,13 +175,13 @@ export default function Tasks() {
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task) => {
+                {filteredTasks.map((task) => {
                   const assignee = team.find((u) => u.id === task.assignee_id);
                   const project = projects.find((p) => p.id === task.project_id);
                   return (
                     <tr key={task.id} className="border-b last:border-0 hover:bg-muted/50">
                       <td className="p-3 text-sm font-medium">{task.title}</td>
-                      <td className="p-3 text-sm text-muted-foreground">{project?.name || "—"}</td>
+                      {selectedProject === "all" && <td className="p-3 text-sm text-muted-foreground">{project?.name || "—"}</td>}
                       <td className="p-3 text-sm">{assignee?.full_name || "Unassigned"}</td>
                       <td className="p-3"><Badge variant="outline" className={`text-[10px] ${priorityColors[task.priority] || ""}`}>{task.priority}</Badge></td>
                       <td className="p-3"><StatusBadge task={task} /></td>
@@ -174,7 +189,7 @@ export default function Tasks() {
                       <td className="p-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="bg-popover z-50">
                             {canEditAllTasks && <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>}
                             {canDeleteAllTasks && <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>}
                           </DropdownMenuContent>

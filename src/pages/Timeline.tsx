@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useTasks, useProjects, useTeamMembers } from "@/hooks/use-supabase-data";
 
@@ -14,10 +15,11 @@ export default function Timeline() {
   const { data: tasks = [], isLoading: lt } = useTasks();
   const { data: projects = [], isLoading: lp } = useProjects();
   const { data: team = [] } = useTeamMembers();
+  const [selectedProject, setSelectedProject] = useState<string>("all");
 
-  // Include all tasks: if missing start_date/due_date, derive sensible defaults
   const normalizedTasks = useMemo(() => {
-    return tasks.map((t) => {
+    const base = selectedProject === "all" ? tasks : tasks.filter((t) => t.project_id === selectedProject);
+    return base.map((t) => {
       const start = t.start_date
         ? new Date(t.start_date)
         : t.due_date
@@ -30,7 +32,7 @@ export default function Timeline() {
           : new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
       return { ...t, _start: start, _end: end };
     });
-  }, [tasks]);
+  }, [tasks, selectedProject]);
 
   const { minDate, maxDate, totalDays } = useMemo(() => {
     if (normalizedTasks.length === 0) return { minDate: new Date(), maxDate: new Date(), totalDays: 1 };
@@ -54,18 +56,19 @@ export default function Timeline() {
   }, [minDate, maxDate, totalDays, normalizedTasks]);
 
   const groupedByProject = useMemo(() => {
-    const grouped = projects.map((p) => ({
-      project: p,
-      tasks: normalizedTasks.filter((t) => t.project_id === p.id),
-    })).filter((g) => g.tasks.length > 0);
+    const grouped = projects
+      .filter((p) => selectedProject === "all" || p.id === selectedProject)
+      .map((p) => ({
+        project: p,
+        tasks: normalizedTasks.filter((t) => t.project_id === p.id),
+      })).filter((g) => g.tasks.length > 0);
 
-    // Also include tasks not assigned to any project
     const unassigned = normalizedTasks.filter((t) => !t.project_id);
     if (unassigned.length > 0) {
       grouped.push({ project: { id: "__unassigned", name: "Unassigned" } as any, tasks: unassigned });
     }
     return grouped;
-  }, [projects, normalizedTasks]);
+  }, [projects, normalizedTasks, selectedProject]);
 
   if (lt || lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -73,9 +76,22 @@ export default function Timeline() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Timeline</h1>
-        <p className="text-muted-foreground mt-1">Project schedule and milestones</p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="font-heading text-3xl font-bold tracking-tight">Timeline</h1>
+          <p className="text-muted-foreground mt-1">Project schedule and milestones</p>
+        </div>
+        <Select value={selectedProject} onValueChange={setSelectedProject}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="All Projects" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-50">
+            <SelectItem value="all">All Projects</SelectItem>
+            {projects.map((p) => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex gap-4 text-xs">
