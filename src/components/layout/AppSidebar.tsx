@@ -20,18 +20,34 @@ import logoColor from "@/assets/logo-color.png";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
-const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { label: "Projects", icon: FolderKanban, path: "/projects" },
-  { label: "Tasks", icon: ListTodo, path: "/tasks" },
-  { label: "Budget", icon: DollarSign, path: "/budget" },
-  { label: "Timeline", icon: CalendarRange, path: "/timeline" },
-  { label: "Team", icon: Users, path: "/team" },
-  { label: "Documents", icon: FileText, path: "/documents" },
-  { label: "User Guide", icon: BookOpen, path: "/guide" },
-  { label: "Activity Log", icon: Activity, path: "/activity" },
+
+const navGroups = [
+  {
+    label: null,
+    items: [
+      { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+    ],
+  },
+  {
+    label: "WORKSPACE",
+    items: [
+      { label: "Projects", icon: FolderKanban, path: "/projects" },
+      { label: "Tasks", icon: ListTodo, path: "/tasks" },
+      { label: "Budget", icon: DollarSign, path: "/budget" },
+      { label: "Timeline", icon: CalendarRange, path: "/timeline" },
+    ],
+  },
+  {
+    label: "TOOLS",
+    items: [
+      { label: "Team", icon: Users, path: "/team" },
+      { label: "Documents", icon: FileText, path: "/documents" },
+      { label: "User Guide", icon: BookOpen, path: "/guide" },
+      { label: "Activity Log", icon: Activity, path: "/activity" },
+    ],
+  },
 ];
 
 export function AppSidebar() {
@@ -54,76 +70,98 @@ export function AppSidebar() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <img src={logoWhite} alt="Blumint Workspace" className="h-8" />
-        </div>
-        {/* Close button — mobile only */}
-        <Button variant="ghost" size="icon" className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent" onClick={closeMobile}>
-          <X className="h-5 w-5" />
+      <div className="px-5 py-4 flex items-center justify-between">
+        <img src={logoWhite} alt="Blumint Workspace" className="h-7 shrink-0" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden h-7 w-7 text-sidebar-foreground hover:bg-sidebar-accent shrink-0"
+          onClick={closeMobile}
+        >
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={closeMobile}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <Separator className="bg-sidebar-border" />
+
+      {/* Nav Groups */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        {navGroups.map((group, gi) => (
+          <div key={gi}>
+            {group.label && (
+              <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-muted">
+                {group.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={closeMobile}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {/* User */}
-      <div className="border-t border-sidebar-border px-4 py-4 space-y-2">
-        <Link to="/settings" onClick={closeMobile} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{profile?.full_name || "Loading..."}</p>
-            <p className="text-xs text-sidebar-muted truncate capitalize">{role || "Member"}</p>
-          </div>
-          <Settings className="h-4 w-4 text-sidebar-muted" />
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
+      {/* Footer — User + Sign Out */}
+      <div className="mt-auto">
+        <Separator className="bg-sidebar-border" />
+        <div className="px-3 py-3 space-y-0.5">
+          <Link
+            to="/settings"
+            onClick={closeMobile}
+            className="flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-sidebar-accent/60 transition-colors group"
+          >
+            <Avatar className="h-7 w-7 shrink-0">
+              <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-[10px] font-semibold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate text-sidebar-foreground leading-none">
+                {profile?.full_name || "Loading..."}
+              </p>
+              <p className="text-[11px] text-sidebar-muted truncate capitalize mt-0.5">
+                {role?.replace("_", " ") || "Member"}
+              </p>
+            </div>
+            <Settings className="h-3.5 w-3.5 text-sidebar-muted shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </Link>
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Sign Out
+          </button>
+        </div>
       </div>
     </>
   );
 
   return (
     <>
-      {/* Mobile hamburger trigger */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-4 bg-card border-b border-border lg:hidden">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMobileOpen(true)}
-        >
-          <Menu className="h-5 w-5" />
+      {/* Mobile top bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center h-12 px-4 bg-card border-b border-border lg:hidden">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileOpen(true)}>
+          <Menu className="h-4 w-4" />
         </Button>
-        <div className="flex items-center gap-2 ml-2">
-          <img src={logoColor} alt="Blumint Workspace" className="h-6" />
-        </div>
+        <img src={logoColor} alt="Blumint Workspace" className="h-5 ml-2" />
       </div>
 
       {/* Mobile overlay */}
@@ -133,18 +171,18 @@ export function AppSidebar() {
         </div>
       )}
 
-      {/* Mobile sidebar (slide-in) */}
+      {/* Mobile sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-transform duration-200 lg:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {sidebarContent}
       </aside>
 
-      {/* Desktop sidebar (always visible) */}
-      <aside className="hidden lg:flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex h-screen w-60 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0">
         {sidebarContent}
       </aside>
     </>

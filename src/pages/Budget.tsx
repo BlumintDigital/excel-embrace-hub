@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,7 +12,8 @@ import BudgetCategoryDialog from "@/components/dialogs/BudgetCategoryDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
 
-const PIE_COLORS = ["hsl(243, 75%, 59%)", "hsl(167, 72%, 60%)", "hsl(38, 92%, 50%)", "hsl(142, 76%, 36%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 60%)"];
+import { CHART_COLORS } from "@/lib/status-config";
+const PIE_COLORS = CHART_COLORS;
 
 export default function Budget() {
   const { data: projects = [], isLoading: lp } = useProjects();
@@ -39,7 +39,7 @@ export default function Budget() {
   if (projects.length === 0) {
     return (
       <div className="p-6 lg:p-8 space-y-6">
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Budget</h1>
+        <h1 className="font-heading text-xl font-semibold">Budget</h1>
         <Card><CardContent className="p-8 text-center text-muted-foreground">No projects yet. Create a project first to track budgets.</CardContent></Card>
       </div>
     );
@@ -57,8 +57,8 @@ export default function Budget() {
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Budget</h1>
-          <p className="text-muted-foreground mt-1">Track projected vs. actual costs</p>
+          <h1 className="font-heading text-xl font-semibold">Budget</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Track projected vs. actual costs</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={activeProjectId} onValueChange={setSelectedProject}>
@@ -76,16 +76,13 @@ export default function Budget() {
           { label: "Actual Spent", value: fmtK(totalActual), icon: percentUsed > 80 ? TrendingDown : TrendingUp, color: percentUsed > 80 ? "text-destructive" : "text-success" },
           { label: "Remaining", value: fmtK(difference), icon: difference < 0 ? AlertTriangle : DollarSign, color: difference < 0 ? "text-destructive" : "text-success" },
         ].map((card, i) => (
-          <motion.div key={card.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-            <Card>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className={`rounded-lg bg-muted p-2.5 ${card.color}`}><card.icon className="h-5 w-5" /></div>
-                  <div><p className="text-2xl font-heading font-bold">{card.value}</p><p className="text-xs text-muted-foreground">{card.label}</p></div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <Card key={card.label}>
+            <CardContent className="p-5">
+              <card.icon className={`h-4 w-4 mb-3 ${card.color}`} />
+              <p className="text-2xl font-semibold font-heading">{card.value}</p>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">{card.label}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
@@ -102,7 +99,7 @@ export default function Budget() {
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ borderRadius: "0.75rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
+                    <Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
                     <Bar dataKey="Projected" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                     <Bar dataKey="Actual" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
                   </BarChart>
@@ -115,7 +112,7 @@ export default function Budget() {
                 <ResponsiveContainer width="100%" height={220}>
                   <PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3} dataKey="value">
                     {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie><Tooltip contentStyle={{ borderRadius: "0.75rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} /></PieChart>
+                  </Pie><Tooltip contentStyle={{ borderRadius: "0.5rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} /></PieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-wrap gap-3 mt-2 justify-center">
                   {pieData.map((item, i) => (

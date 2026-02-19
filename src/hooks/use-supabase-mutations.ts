@@ -2,12 +2,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { logActivity } from "@/lib/activity-logger";
+import { usePermissions } from "@/hooks/use-permissions";
 
 // ── Projects ──
 export function useCreateProject() {
   const qc = useQueryClient();
+  const { canCreateProjects } = usePermissions();
   return useMutation({
     mutationFn: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number }) => {
+      if (!canCreateProjects) throw new Error("Insufficient permissions");
       const { data: user } = await supabase.auth.getUser();
       const { error } = await supabase.from("projects").insert({ ...data, created_by: user.user?.id ?? null, budget_actual: 0 });
       if (error) throw error;
@@ -19,8 +22,10 @@ export function useCreateProject() {
 
 export function useUpdateProject() {
   const qc = useQueryClient();
+  const { canEditAllProjects } = usePermissions();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number }) => {
+      if (!canEditAllProjects) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("projects").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -31,8 +36,10 @@ export function useUpdateProject() {
 
 export function useDeleteProject() {
   const qc = useQueryClient();
+  const { canDeleteProjects } = usePermissions();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!canDeleteProjects) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("projects").delete().eq("id", id);
       if (error) throw error;
     },
@@ -44,8 +51,10 @@ export function useDeleteProject() {
 // ── Tasks ──
 export function useCreateTask() {
   const qc = useQueryClient();
+  const { canCreateTasks } = usePermissions();
   return useMutation({
     mutationFn: async (data: { title: string; description?: string; status: string; priority: string; project_id?: string; assignee_id?: string; due_date?: string; start_date?: string }) => {
+      if (!canCreateTasks) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("tasks").insert(data);
       if (error) throw error;
     },
@@ -56,8 +65,10 @@ export function useCreateTask() {
 
 export function useUpdateTask() {
   const qc = useQueryClient();
+  const { canEditAllTasks } = usePermissions();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; title?: string; description?: string; status?: string; priority?: string; project_id?: string; assignee_id?: string; due_date?: string; start_date?: string }) => {
+      if (!canEditAllTasks) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("tasks").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -68,8 +79,10 @@ export function useUpdateTask() {
 
 export function useDeleteTask() {
   const qc = useQueryClient();
+  const { canDeleteAllTasks } = usePermissions();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!canDeleteAllTasks) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) throw error;
     },
@@ -81,8 +94,10 @@ export function useDeleteTask() {
 // ── Budget Categories ──
 export function useCreateBudgetCategory() {
   const qc = useQueryClient();
+  const { canManageBudget } = usePermissions();
   return useMutation({
     mutationFn: async (data: { project_id: string; name: string; projected: number; actual: number }) => {
+      if (!canManageBudget) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("budget_categories").insert(data);
       if (error) throw error;
     },
@@ -93,8 +108,10 @@ export function useCreateBudgetCategory() {
 
 export function useUpdateBudgetCategory() {
   const qc = useQueryClient();
+  const { canManageBudget } = usePermissions();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; name?: string; projected?: number; actual?: number }) => {
+      if (!canManageBudget) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("budget_categories").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -105,8 +122,10 @@ export function useUpdateBudgetCategory() {
 
 export function useDeleteBudgetCategory() {
   const qc = useQueryClient();
+  const { canManageBudget } = usePermissions();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!canManageBudget) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("budget_categories").delete().eq("id", id);
       if (error) throw error;
     },
@@ -118,8 +137,10 @@ export function useDeleteBudgetCategory() {
 // ── Documents ──
 export function useCreateDocument() {
   const qc = useQueryClient();
+  const { canManageDocuments } = usePermissions();
   return useMutation({
     mutationFn: async (data: { name: string; project_id?: string; category?: string; size: number; file_path?: string }) => {
+      if (!canManageDocuments) throw new Error("Insufficient permissions");
       const { data: user } = await supabase.auth.getUser();
       const { error } = await supabase.from("documents").insert({ ...data, uploaded_by: user.user?.id ?? null });
       if (error) throw error;
@@ -131,8 +152,10 @@ export function useCreateDocument() {
 
 export function useDeleteDocument() {
   const qc = useQueryClient();
+  const { canManageDocuments } = usePermissions();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!canManageDocuments) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("documents").delete().eq("id", id);
       if (error) throw error;
     },
@@ -176,9 +199,9 @@ export function useInviteUser() {
       if (result?.error) throw new Error(result.error);
       return result;
     },
-    onSuccess: (result, data) => {
+    onSuccess: (_result, data) => {
       qc.invalidateQueries({ queryKey: ["team_members"] });
-      toast.success("User invited successfully. Temp password: " + result.temp_password, { duration: 15000 });
+      toast.success(`Invitation sent to ${data.email}. They will receive an email to set their password.`);
       logActivity({ action: "invited", entity_type: "user", entity_name: data.full_name, details: `Role: ${data.role}` });
     },
     onError: (e: Error) => toast.error(e.message),

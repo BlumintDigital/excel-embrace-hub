@@ -1,7 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ALLOWED_ROLES = ["admin", "project_manager", "team_member"];
+const SITE_URL = Deno.env.get("SITE_URL") || "https://excel-embrace-hub.lovable.app";
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": SITE_URL,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -60,17 +63,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create the user with a random password (they can reset it)
-    const tempPassword = crypto.randomUUID() + "Aa1!";
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: { full_name },
+    // Validate role against allowlist
+    if (!ALLOWED_ROLES.includes(role)) {
+      return new Response(JSON.stringify({ error: "Invalid role. Must be one of: admin, project_manager, team_member" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Send magic-link invite email — no temp password generated or returned
+    const { data: newUser, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+      data: { full_name },
+      redirectTo: `${SITE_URL}/reset-password`,
     });
 
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
+    if (inviteError) {
+      return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -88,11 +96,11 @@ Deno.serve(async (req) => {
       .upsert({ user_id: newUser.user.id, role }, { onConflict: "user_id" });
 
     return new Response(
-      JSON.stringify({ success: true, user_id: newUser.user.id, temp_password: tempPassword }),
+      JSON.stringify({ success: true, user_id: newUser.user.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (_err) {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

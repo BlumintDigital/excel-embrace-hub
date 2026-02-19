@@ -1,22 +1,16 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FileText, Upload, Download, Eye, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 import { useDocuments, useProjects } from "@/hooks/use-supabase-data";
 import { useDeleteDocument } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
 import DocumentDialog from "@/components/dialogs/DocumentDialog";
 import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
-
-const categoryIcons: Record<string, string> = {
-  Drawings: "text-primary",
-  Reports: "text-success",
-  Permits: "text-warning",
-};
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -35,22 +29,32 @@ export default function Documents() {
   const deleteDoc = useDeleteDocument();
   const { canManageDocuments } = usePermissions();
 
-  const filteredDocs = selectedProject === "all" ? documents : documents.filter((d) => d.project_id === selectedProject);
+  const filteredDocs = selectedProject === "all"
+    ? documents
+    : documents.filter((d) => d.project_id === selectedProject);
 
   if (isLoading) {
-    return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Documents</h1>
-          <p className="text-muted-foreground mt-1">{filteredDocs.length} files{selectedProject !== "all" ? "" : " across all projects"}</p>
+          <h1 className="font-heading text-xl font-semibold">Documents</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {filteredDocs.length} file{filteredDocs.length !== 1 ? "s" : ""}
+            {selectedProject === "all" ? " across all projects" : ""}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-52">
+            <SelectTrigger className="w-48 h-8 text-sm">
               <SelectValue placeholder="All Projects" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">
@@ -61,59 +65,126 @@ export default function Documents() {
             </SelectContent>
           </Select>
           {canManageDocuments && (
-            <Button onClick={() => setDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" /> Upload
+            <Button size="sm" onClick={() => setDialogOpen(true)}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
             </Button>
           )}
         </div>
       </div>
 
-      {filteredDocs.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No documents{selectedProject !== "all" ? " for this project" : ""}. Upload files to get started.</CardContent></Card>
-      ) : (
-        <div className="grid gap-3">
-          {filteredDocs.map((doc, i) => {
-            const project = projects.find((p) => p.id === doc.project_id);
-            return (
-              <motion.div key={doc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4 flex items-center gap-4">
-                    <div className={`rounded-lg bg-muted p-2.5 ${categoryIcons[doc.category || ""] || "text-muted-foreground"}`}>
-                      <FileText className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{doc.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {doc.category && <Badge variant="secondary" className="text-[10px]">{doc.category}</Badge>}
-                        {selectedProject === "all" && <span className="text-xs text-muted-foreground">{project?.name || "Unassigned"}</span>}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-muted-foreground">{formatFileSize(doc.size || 0)}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Download className="h-4 w-4" /></Button>
-                      {canManageDocuments && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-popover z-50">
-                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(doc.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+      {/* Table */}
+      <Card>
+        <CardContent className="p-0">
+          {filteredDocs.length === 0 ? (
+            <div className="p-10 text-center">
+              <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+              <p className="text-sm font-medium">No documents yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedProject !== "all" ? "No files for this project." : "Upload files to get started."}
+              </p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Category</th>
+                  {selectedProject === "all" && (
+                    <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Project</th>
+                  )}
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Size</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Date</th>
+                  <th className="px-4 py-2.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDocs.map((doc) => {
+                  const project = projects.find((p) => p.id === doc.project_id);
+                  return (
+                    <tr key={doc.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
+                      {/* Name */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium truncate max-w-[200px]">{doc.name}</span>
+                        </div>
+                      </td>
+                      {/* Category */}
+                      <td className="px-4 py-3">
+                        {doc.category ? (
+                          <Badge variant="secondary" className="text-[10px]">{doc.category}</Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Project */}
+                      {selectedProject === "all" && (
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {project?.name || "—"}
+                        </td>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+                      {/* Size */}
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {formatFileSize(doc.size || 0)}
+                      </td>
+                      {/* Date */}
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+                      {/* Actions */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Download className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Download</TooltipContent>
+                          </Tooltip>
+                          {canManageDocuments && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-popover z-50">
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setDeleteId(doc.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" />Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
 
       <DocumentDialog open={dialogOpen} onOpenChange={setDialogOpen} projects={projects} />
-      <DeleteConfirmDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { if (deleteId) { deleteDoc.mutate(deleteId); setDeleteId(null); } }} title="Delete Document" />
+      <DeleteConfirmDialog
+        open={!!deleteId}
+        onOpenChange={() => setDeleteId(null)}
+        onConfirm={() => { if (deleteId) { deleteDoc.mutate(deleteId); setDeleteId(null); } }}
+        title="Delete Document"
+      />
     </div>
   );
 }

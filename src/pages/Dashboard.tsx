@@ -1,29 +1,26 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { FolderKanban, ListTodo, DollarSign, Users, TrendingUp, TrendingDown, ArrowRight, Loader2 } from "lucide-react";
+import { FolderKanban, ListTodo, DollarSign, Users, TrendingUp, TrendingDown, ArrowRight, Loader2, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { useProjects, useTasks, useTeamMembers } from "@/hooks/use-supabase-data";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Label } from "recharts";
+import { useProjects, useTasks, useTeamMembers, useBudgetCategories } from "@/hooks/use-supabase-data";
 import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
-
-const statusColors: Record<string, string> = {
-  "Planning": "bg-warning/15 text-warning border-warning/30",
-  "In Progress": "bg-primary/15 text-primary border-primary/30",
-  "Completed": "bg-success/15 text-success border-success/30",
-  "On Hold": "bg-muted text-muted-foreground border-muted"
-};
-
-const PIE_COLORS = ["hsl(243, 75%, 59%)", "hsl(167, 72%, 60%)", "hsl(38, 92%, 50%)", "hsl(142, 76%, 36%)"];
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { STATUS_DOT_COLORS, STATUS_BADGE_CLASSES, PRIORITY_DOT_COLORS, CHART_COLORS } from "@/lib/status-config";
 
 export default function Dashboard() {
+  const [selectedProject, setSelectedProject] = useState<string>("all");
+
   const { data: projects = [], isLoading: loadingProjects } = useProjects();
   const { data: tasks = [], isLoading: loadingTasks } = useTasks();
   const { data: teamMembers = [], isLoading: loadingTeam } = useTeamMembers();
+  const { data: categories = [] } = useBudgetCategories(
+    selectedProject !== "all" ? selectedProject : ""
+  );
   const { settings } = useWorkspace();
   const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
 
@@ -33,202 +30,393 @@ export default function Dashboard() {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>);
-
+      </div>
+    );
   }
 
+  // --- Stat card totals always reflect ALL projects ---
   const activeProjects = projects.filter((p) => p.status !== "Completed").length;
   const activeTasks = tasks.filter((t) => t.status !== "Done").length;
   const totalBudgetProjected = projects.reduce((s, p) => s + (p.budget_projected || 0), 0);
   const totalBudgetActual = projects.reduce((s, p) => s + (p.budget_actual || 0), 0);
-  const budgetHealth = totalBudgetProjected > 0 ? (totalBudgetActual / totalBudgetProjected * 100).toFixed(0) : "0";
+  const budgetHealth = totalBudgetProjected > 0
+    ? (totalBudgetActual / totalBudgetProjected * 100).toFixed(0)
+    : "0";
+  const budgetPct = Number(budgetHealth);
 
-  const budgetChartData = projects.map((p) => ({
-    name: p.name.split(" ").slice(0, 2).join(" "),
-    Projected: (p.budget_projected || 0) / 1000,
-    Actual: (p.budget_actual || 0) / 1000
-  }));
+  // --- Filtered data for charts ---
+  const filteredTasks = selectedProject === "all"
+    ? tasks
+    : tasks.filter((t) => t.project_id === selectedProject);
+
+  // Budget chart: all projects (Projected vs Actual per project) OR categories for selected project
+  const budgetChartData = selectedProject === "all"
+    ? projects.map((p) => ({
+        name: p.name.split(" ").slice(0, 2).join(" "),
+        Projected: (p.budget_projected || 0) / 1000,
+        Actual: (p.budget_actual || 0) / 1000,
+      }))
+    : categories.map((c) => ({
+        name: c.name,
+        Projected: (c.projected || 0) / 1000,
+        Actual: (c.actual || 0) / 1000,
+      }));
 
   const taskDistribution = [
-  { name: "To Do", value: tasks.filter((t) => t.status === "To Do").length },
-  { name: "In Progress", value: tasks.filter((t) => t.status === "In Progress").length },
-  { name: "Done", value: tasks.filter((t) => t.status === "Done").length }];
+    { name: "To Do", value: filteredTasks.filter((t) => t.status === "To Do").length },
+    { name: "In Progress", value: filteredTasks.filter((t) => t.status === "In Progress").length },
+    { name: "Done", value: filteredTasks.filter((t) => t.status === "Done").length },
+  ];
+  const totalFilteredTasks = filteredTasks.length;
 
+  const selectedProjectName = projects.find((p) => p.id === selectedProject)?.name;
 
   const cards = [
-  { label: "Active Projects", value: activeProjects, icon: FolderKanban, trend: `${projects.length} total`, up: true },
-  { label: "Active Tasks", value: activeTasks, icon: ListTodo, trend: `${tasks.length} total`, up: false },
-  { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, trend: `${cur.symbol}${(totalBudgetActual / 1000).toFixed(0)}k of ${cur.symbol}${(totalBudgetProjected / 1000).toFixed(0)}k`, up: Number(budgetHealth) < 60 },
-  { label: "Team Members", value: teamMembers.length, icon: Users, trend: "All active", up: true }];
-
+    { label: "Active Projects", value: activeProjects, icon: FolderKanban, sub: `${projects.length} total`, up: true },
+    { label: "Active Tasks", value: activeTasks, icon: ListTodo, sub: `${tasks.length} total`, up: false },
+    { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, sub: `${cur.symbol}${(totalBudgetActual / 1000).toFixed(0)}k of ${cur.symbol}${(totalBudgetProjected / 1000).toFixed(0)}k`, up: budgetPct < 60, budgetPct },
+    { label: "Team Members", value: teamMembers.length, icon: Users, sub: "All active", up: true },
+  ];
 
   return (
-    <div className="p-6 lg:p-8 space-y-8">
-      <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of your projects</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Workspace overview</p>
+        </div>
+        <Link to="/projects">
+          <Button size="sm" className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" />
+            New Project
+          </Button>
+        </Link>
       </div>
 
-      {projects.length === 0 && tasks.length === 0 ?
-      <Card>
-          <CardContent className="p-8 text-center">
-            <FolderKanban className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-heading font-semibold text-lg">No data yet</h3>
-            <p className="text-muted-foreground mt-1">Create your first project to get started.</p>
+      {projects.length === 0 && tasks.length === 0 ? (
+        /* Empty State */
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FolderKanban className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+            <h3 className="font-heading font-semibold text-base">No data yet</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-5">
+              Create your first project to start tracking your work.
+            </p>
             <Link to="/projects">
-              <motion.div whileHover={{ scale: 1.02 }} className="inline-block mt-4">
-                <Badge variant="default" className="cursor-pointer px-4 py-2">Go to Projects</Badge>
-              </motion.div>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" />
+                Create project
+              </Button>
             </Link>
           </CardContent>
-        </Card> :
-
-      <>
-          {/* Summary Cards */}
+        </Card>
+      ) : (
+        <>
+          {/* Stat Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {cards.map((card, i) =>
-          <motion.div key={card.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                <Card className="relative overflow-hidden">
+            {cards.map((card, i) => (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+              >
+                <Card>
                   <CardContent className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div className="rounded-lg bg-primary/10 p-2.5">
-                        <card.icon className="h-5 w-5 text-primary" />
+                    <div className="flex items-center justify-between mb-3">
+                      <card.icon className="h-4 w-4 text-muted-foreground" />
+                      {card.up
+                        ? <TrendingUp className="h-3.5 w-3.5 text-success" />
+                        : <TrendingDown className="h-3.5 w-3.5 text-warning" />
+                      }
+                    </div>
+                    <p className="text-2xl font-semibold font-heading">{card.value}</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">{card.label}</p>
+                    <p className="text-xs text-muted-foreground mt-2">{card.sub}</p>
+                    {"budgetPct" in card && (
+                      <div className="mt-3 h-1 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${Math.min(card.budgetPct as number, 100)}%` }}
+                        />
                       </div>
-                      {card.up ? <TrendingUp className="h-4 w-4 text-success" /> : <TrendingDown className="h-4 w-4 text-warning" />}
-                    </div>
-                    <div className="mt-3">
-                      <p className="text-2xl font-heading font-bold">{card.value}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{card.label}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">{card.trend}</p>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
-          )}
+            ))}
+          </div>
+
+          {/* Charts section header with project filter */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Budget & Tasks</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {selectedProject === "all"
+                  ? "Showing all projects"
+                  : selectedProjectName
+                }
+              </p>
+            </div>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-48 h-8 text-sm">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Charts Row */}
           <div className="grid gap-6 lg:grid-cols-3">
-            <motion.div className="lg:col-span-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            {/* Budget Bar Chart */}
+            <motion.div
+              className="lg:col-span-2"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+            >
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Budget Overview (in {cur.code})</CardTitle>
+                <CardHeader className="flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-semibold">
+                    {selectedProject === "all" ? "Budget by Project" : "Budget by Category"} ({cur.code})
+                  </CardTitle>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-sm bg-primary inline-block" />
+                      Projected
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-sm bg-muted-foreground/40 inline-block" />
+                      Actual
+                    </span>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={budgetChartData} barGap={4}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip contentStyle={{ borderRadius: "0.75rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
-                      <Bar dataKey="Projected" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-                      <Bar dataKey="Actual" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {budgetChartData.length === 0 ? (
+                    <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                      No budget data for this project yet
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart data={budgetChartData} barGap={4}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          stroke="hsl(var(--muted-foreground))"
+                          tickFormatter={(v) => `${v}k`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: "0.5rem",
+                            border: "1px solid hsl(var(--border))",
+                            background: "hsl(var(--card))",
+                            fontSize: "12px",
+                          }}
+                          formatter={(value: number, name: string) => [`${cur.symbol}${value}k`, name]}
+                        />
+                        <Bar dataKey="Projected" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="Actual" fill="hsl(var(--muted-foreground) / 0.35)" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            {/* Task Donut */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.34 }}
+            >
               <Card className="h-full">
                 <CardHeader>
-                  <CardTitle className="text-lg">Task Distribution</CardTitle>
+                  <CardTitle className="text-sm font-semibold">Task Distribution</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={taskDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
-                        {taskDistribution.map((_, i) =>
-                      <Cell key={i} fill={PIE_COLORS[i]} />
-                      )}
-                      </Pie>
-                      <Tooltip contentStyle={{ borderRadius: "0.75rem", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex gap-4 mt-2">
-                    {taskDistribution.map((item, i) =>
-                  <div key={item.name} className="flex items-center gap-1.5 text-xs">
-                        <div className="h-2.5 w-2.5 rounded-full" style={{ background: PIE_COLORS[i] }} />
-                        {item.name} ({item.value})
-                      </div>
+                  {totalFilteredTasks === 0 ? (
+                    <div className="flex items-center justify-center h-[180px] text-sm text-muted-foreground">
+                      No tasks for this project
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={180}>
+                      <PieChart>
+                        <Pie
+                          data={taskDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={52}
+                          outerRadius={78}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {taskDistribution.map((_, i) => (
+                            <Cell key={i} fill={CHART_COLORS[i]} />
+                          ))}
+                          <Label
+                            value={totalFilteredTasks}
+                            position="center"
+                            style={{
+                              fontSize: "1.25rem",
+                              fontWeight: 600,
+                              fill: "hsl(var(--foreground))",
+                              fontFamily: "var(--font-heading)",
+                            }}
+                          />
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: "0.5rem",
+                            border: "1px solid hsl(var(--border))",
+                            background: "hsl(var(--card))",
+                            fontSize: "12px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   )}
-                  </div>
+                  {totalFilteredTasks > 0 && (
+                    <>
+                      <p className="text-xs text-muted-foreground -mt-1 mb-3">total tasks</p>
+                      <div className="grid grid-cols-3 gap-2 w-full">
+                        {taskDistribution.map((item, i) => (
+                          <div key={item.name} className="flex flex-col items-center gap-1 rounded-md border border-border px-2 py-2">
+                            <div className="h-1.5 w-1.5 rounded-full" style={{ background: CHART_COLORS[i] }} />
+                            <span className="text-[10px] text-muted-foreground">{item.name}</span>
+                            <span className="text-sm font-semibold font-heading">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
           </div>
 
-          {/* Projects */}
+          {/* Projects + Tasks Row */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+            {/* Active Projects */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
               <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <CardTitle className="text-lg">Active Projects</CardTitle>
-                  <Link to="/projects" className="text-sm text-primary hover:underline flex items-center gap-1">
+                <CardHeader className="flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold">Active Projects</CardTitle>
+                  <Link to="/projects" className="flex items-center gap-1 text-xs text-primary hover:underline">
                     View all <ArrowRight className="h-3 w-3" />
                   </Link>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {projects.filter((p) => p.status !== "Completed").slice(0, 5).map((project) => {
-                  const progress = project.budget_projected > 0 ? Math.round((project.budget_actual || 0) / project.budget_projected * 100) : 0;
-                  return (
-                    <div key={project.id} className="flex items-center justify-between rounded-lg border p-3">
+                <Separator />
+                <CardContent className="p-0">
+                  {projects.filter((p) => p.status !== "Completed").slice(0, 5).map((project, idx, arr) => {
+                    const progress = project.budget_projected > 0
+                      ? Math.round((project.budget_actual || 0) / project.budget_projected * 100)
+                      : 0;
+                    const openTasks = tasks.filter(
+                      (t) => t.project_id === project.id && t.status !== "Done"
+                    ).length;
+                    const dotColor = STATUS_DOT_COLORS[project.status] || "bg-muted-foreground";
+                    const isSelected = selectedProject === project.id;
+                    return (
+                      <div
+                        key={project.id}
+                        onClick={() => setSelectedProject(isSelected ? "all" : project.id)}
+                        className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${isSelected ? "bg-primary/5" : "hover:bg-muted/40"} ${idx < arr.length - 1 ? "border-b border-border" : ""}`}
+                      >
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{project.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", statusColors[project.status])}>
-                              {project.status}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">{progress}% budget used</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`} />
+                            <p className="text-sm font-medium truncate" title={project.name}>{project.name}</p>
+                            {isSelected && (
+                              <span className="text-[10px] text-primary font-medium shrink-0">viewing</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5 ml-3.5">
+                            {openTasks} open task{openTasks !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 ml-4 shrink-0">
+                          <span className="text-xs text-muted-foreground">{progress}%</span>
+                          <div className="h-1 w-16 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-primary transition-all"
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            />
                           </div>
                         </div>
-                        <div className="h-2 w-20 rounded-full bg-muted overflow-hidden ml-4">
-                          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                        </div>
-                      </div>);
-
-                })}
-                  {projects.filter((p) => p.status !== "Completed").length === 0 &&
-                <p className="text-sm text-muted-foreground text-center py-4">No active projects</p>
-                }
+                      </div>
+                    );
+                  })}
+                  {projects.filter((p) => p.status !== "Completed").length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">No active projects</p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+            {/* Recent Tasks */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.46 }}
+            >
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recent Tasks</CardTitle>
+                <CardHeader className="flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold">Recent Tasks</CardTitle>
+                  {selectedProject !== "all" && (
+                    <span className="text-xs text-muted-foreground">
+                      {selectedProjectName}
+                    </span>
+                  )}
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {tasks.slice(0, 5).map((task) => {
+                <Separator />
+                <CardContent className="p-0">
+                  {filteredTasks.slice(0, 5).map((task, idx, arr) => {
                     const project = projects.find((p) => p.id === task.project_id);
+                    const priorityDot = PRIORITY_DOT_COLORS[task.priority] || "bg-muted-foreground";
+                    const statusBadge = STATUS_BADGE_CLASSES[task.status] || "bg-muted text-muted-foreground border-border";
                     return (
-                      <div key={task.id} className="flex gap-3">
-                          <div className="mt-1 h-2 w-2 rounded-full bg-primary shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm">
-                              <span className="font-medium">{task.title}</span>{" "}
-                              <Badge variant="secondary" className="text-[10px] ml-1">{task.status}</Badge>
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {project?.name || "Unassigned"} · {task.priority} priority
-                            </p>
+                      <div
+                        key={task.id}
+                        className={`flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors ${idx < arr.length - 1 ? "border-b border-border" : ""}`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${priorityDot}`} />
+                            <p className="text-sm font-medium truncate">{task.title}</p>
                           </div>
-                        </div>);
-
+                          <p className="text-xs text-muted-foreground mt-0.5 ml-3.5">
+                            {selectedProject === "all" ? (project?.name || "Unassigned") : `${task.priority} priority`}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 shrink-0 ml-3 ${statusBadge}`}
+                        >
+                          {task.status}
+                        </Badge>
+                      </div>
+                    );
                   })}
-                    {tasks.length === 0 &&
-                  <p className="text-sm text-muted-foreground text-center py-4">No tasks yet</p>
-                  }
-                  </div>
+                  {filteredTasks.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">No tasks yet</p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
           </div>
         </>
-      }
-    </div>);
-
+      )}
+    </div>
+  );
 }

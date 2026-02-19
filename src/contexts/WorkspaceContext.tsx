@@ -40,6 +40,29 @@ const DEFAULT_SETTINGS: WorkspaceSettings = {
 
 const STORAGE_KEY = "blumint_workspace_settings";
 
+// Accepts #rrggbb, #rgb, rgb(...), rgba(...), hsl(...), hsla(...)
+const COLOR_PATTERN = /^(#([0-9a-fA-F]{3}){1,2}|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)|hsl\(\s*\d+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*\)|hsla\(\s*\d+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*,\s*[\d.]+\s*\))$/;
+
+function sanitizeSettings(patch: Partial<WorkspaceSettings>): Partial<WorkspaceSettings> {
+  const safe = { ...patch };
+  if (safe.primaryColor !== undefined && !COLOR_PATTERN.test(safe.primaryColor)) {
+    delete safe.primaryColor;
+  }
+  if (safe.accentColor !== undefined && !COLOR_PATTERN.test(safe.accentColor)) {
+    delete safe.accentColor;
+  }
+  // Only allow known sidebar styles
+  if (safe.sidebarStyle !== undefined && !["Dark", "Light", "Branded"].includes(safe.sidebarStyle)) {
+    delete safe.sidebarStyle;
+  }
+  // Only allow known currency codes
+  const knownCurrencies = ["USD","NGN","EUR","GBP","CAD","KES","GHS","ZAR","INR","JPY"];
+  if (safe.currency !== undefined && !knownCurrencies.includes(safe.currency)) {
+    delete safe.currency;
+  }
+  return safe;
+}
+
 interface WorkspaceContextValue {
   settings: WorkspaceSettings;
   updateSettings: (patch: Partial<WorkspaceSettings>) => void;
@@ -90,7 +113,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   const updateSettings = async (patch: Partial<WorkspaceSettings>) => {
-    const newSettings = { ...settings, ...patch };
+    const newSettings = { ...settings, ...sanitizeSettings(patch) };
     setSettings(newSettings);
 
     // Persist to database

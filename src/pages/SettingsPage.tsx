@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -42,12 +42,28 @@ export default function SettingsPage() {
   const [sidebarStyle, setSidebarStyle] = useState(settings.sidebarStyle);
   const [currency, setCurrency] = useState(settings.currency);
 
-  // Notification preferences
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [taskAssigned, setTaskAssigned] = useState(true);
-  const [projectUpdates, setProjectUpdates] = useState(true);
-  const [budgetAlerts, setBudgetAlerts] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
+  // Password state (controlled, no DOM reads)
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  // Notification preferences — persisted to localStorage
+  const NOTIF_KEY = "blumint_notification_prefs";
+  const loadNotifPrefs = () => {
+    try { return JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}"); } catch { return {}; }
+  };
+  const notifDefaults = { emailNotifs: true, taskAssigned: true, projectUpdates: true, budgetAlerts: true, weeklyDigest: false };
+  const saved = loadNotifPrefs();
+  const [emailNotifs, setEmailNotifs] = useState<boolean>(saved.emailNotifs ?? notifDefaults.emailNotifs);
+  const [taskAssigned, setTaskAssigned] = useState<boolean>(saved.taskAssigned ?? notifDefaults.taskAssigned);
+  const [projectUpdates, setProjectUpdates] = useState<boolean>(saved.projectUpdates ?? notifDefaults.projectUpdates);
+  const [budgetAlerts, setBudgetAlerts] = useState<boolean>(saved.budgetAlerts ?? notifDefaults.budgetAlerts);
+  const [weeklyDigest, setWeeklyDigest] = useState<boolean>(saved.weeklyDigest ?? notifDefaults.weeklyDigest);
+
+  // Keep localStorage in sync whenever notification prefs change
+  useEffect(() => {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest }));
+  }, [emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest]);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -76,7 +92,29 @@ export default function SettingsPage() {
   };
 
   const handleSaveNotifications = () => {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify({ emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest }));
     toast.success("Notification preferences saved");
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSavingPassword(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Password updated");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
   };
 
   return (
@@ -185,33 +223,31 @@ export default function SettingsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
-                  <Input id="newPassword" type="password" placeholder="••••••••" />
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={savingPassword}
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input id="confirmPassword" type="password" placeholder="••••••••" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={savingPassword}
+                  />
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    const newPw = (document.getElementById("newPassword") as HTMLInputElement)?.value;
-                    const confirmPw = (document.getElementById("confirmPassword") as HTMLInputElement)?.value;
-                    if (!newPw || newPw.length < 6) {
-                      toast.error("Password must be at least 6 characters");
-                      return;
-                    }
-                    if (newPw !== confirmPw) {
-                      toast.error("Passwords do not match");
-                      return;
-                    }
-                    const { error } = await supabase.auth.updateUser({ password: newPw });
-                    if (error) toast.error(error.message);
-                    else toast.success("Password updated");
-                  }}
-                >
-                  Update Password
+                <Button variant="outline" onClick={handleUpdatePassword} disabled={savingPassword}>
+                  {savingPassword ? "Updating..." : "Update Password"}
                 </Button>
               </div>
             </CardContent>
