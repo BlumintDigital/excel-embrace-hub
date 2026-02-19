@@ -9,7 +9,7 @@ export function useCreateProject() {
   const qc = useQueryClient();
   const { canCreateProjects } = usePermissions();
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number }) => {
+    mutationFn: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number; client_id?: string }) => {
       if (!canCreateProjects) throw new Error("Insufficient permissions");
       const { data: user } = await supabase.auth.getUser();
       const { error } = await supabase.from("projects").insert({ ...data, created_by: user.user?.id ?? null, budget_actual: 0 });
@@ -24,7 +24,7 @@ export function useUpdateProject() {
   const qc = useQueryClient();
   const { canEditAllProjects } = usePermissions();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number }) => {
+    mutationFn: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number; client_id?: string }) => {
       if (!canEditAllProjects) throw new Error("Insufficient permissions");
       const { error } = await supabase.from("projects").update(data).eq("id", id);
       if (error) throw error;
@@ -185,6 +185,50 @@ export function useRemoveProjectMember() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["project_members"] }); toast.success("Member removed"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+// ── Clients ──
+export function useCreateClient() {
+  const qc = useQueryClient();
+  const { canCreateProjects } = usePermissions();
+  return useMutation({
+    mutationFn: async (data: { name: string; email?: string; phone?: string; notes?: string }) => {
+      if (!canCreateProjects) throw new Error("Insufficient permissions");
+      const { data: user } = await supabase.auth.getUser();
+      const { error } = await supabase.from("clients").insert({ ...data, created_by: user.user?.id ?? null });
+      if (error) throw error;
+    },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Client created"); logActivity({ action: "created", entity_type: "client", entity_name: data.name }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useUpdateClient() {
+  const qc = useQueryClient();
+  const { canEditAllProjects } = usePermissions();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; name?: string; email?: string; phone?: string; notes?: string }) => {
+      if (!canEditAllProjects) throw new Error("Insufficient permissions");
+      const { error } = await supabase.from("clients").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Client updated"); logActivity({ action: "updated", entity_type: "client", entity_name: data.name || "client", entity_id: data.id }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useDeleteClient() {
+  const qc = useQueryClient();
+  const { canDeleteProjects } = usePermissions();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (!canDeleteProjects) throw new Error("Insufficient permissions");
+      const { error } = await supabase.from("clients").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_v, id) => { qc.invalidateQueries({ queryKey: ["clients"] }); qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Client deleted"); logActivity({ action: "deleted", entity_type: "client", entity_id: id }); },
     onError: (e: Error) => toast.error(e.message),
   });
 }

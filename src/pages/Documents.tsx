@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { FileText, Upload, Download, Eye, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
+import { FileText, Upload, Download, Eye, Loader2, MoreHorizontal, Trash2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useDocuments, useProjects } from "@/hooks/use-supabase-data";
 import { useDeleteDocument } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -26,12 +27,18 @@ export default function Documents() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [search, setSearch] = useState("");
   const deleteDoc = useDeleteDocument();
   const { canManageDocuments } = usePermissions();
 
-  const filteredDocs = selectedProject === "all"
-    ? documents
-    : documents.filter((d) => d.project_id === selectedProject);
+  const filteredDocs = useMemo(() => {
+    let result = selectedProject === "all" ? documents : documents.filter((d) => d.project_id === selectedProject);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((d) => d.name.toLowerCase().includes(q) || (d.category || "").toLowerCase().includes(q));
+    }
+    return result;
+  }, [documents, selectedProject, search]);
 
   if (isLoading) {
     return (
@@ -52,7 +59,16 @@ export default function Documents() {
             {selectedProject === "all" ? " across all projects" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              className="pl-8 h-8 text-sm w-44"
+              placeholder="Search documents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <Select value={selectedProject} onValueChange={setSelectedProject}>
             <SelectTrigger className="w-48 h-8 text-sm">
               <SelectValue placeholder="All Projects" />

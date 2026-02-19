@@ -14,6 +14,8 @@ import {
   X,
   BookOpen,
   Activity,
+  FileOutput,
+  Building2,
 } from "lucide-react";
 import logoWhite from "@/assets/logo-white.png";
 import logoColor from "@/assets/logo-color.png";
@@ -34,6 +36,7 @@ const navGroups = [
     label: "WORKSPACE",
     items: [
       { label: "Projects", icon: FolderKanban, path: "/projects" },
+      { label: "Clients", icon: Building2, path: "/clients" },
       { label: "Tasks", icon: ListTodo, path: "/tasks" },
       { label: "Budget", icon: DollarSign, path: "/budget" },
       { label: "Timeline", icon: CalendarRange, path: "/timeline" },
@@ -44,6 +47,7 @@ const navGroups = [
     items: [
       { label: "Team", icon: Users, path: "/team" },
       { label: "Documents", icon: FileText, path: "/documents" },
+      { label: "PDF to Word", icon: FileOutput, path: "/pdf-converter" },
       { label: "User Guide", icon: BookOpen, path: "/guide" },
       { label: "Activity Log", icon: Activity, path: "/activity" },
     ],

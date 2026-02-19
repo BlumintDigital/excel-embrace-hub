@@ -2,6 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Types matching the DB schema
+export interface DbClient {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface DbProject {
   id: string;
   name: string;
@@ -11,6 +21,7 @@ export interface DbProject {
   end_date: string | null;
   budget_projected: number;
   budget_actual: number;
+  client_id: string | null;
   created_by: string | null;
   created_at: string;
 }
@@ -157,6 +168,20 @@ export function useProjectMembers() {
       const { data, error } = await supabase.from("project_members").select("*");
       if (error) throw error;
       return (data || []) as DbProjectMember[];
+    },
+  });
+}
+
+export function useClients() {
+  return useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as DbClient[];
     },
   });
 }

@@ -20,6 +20,8 @@ import SettingsPage from "@/pages/SettingsPage";
 import Login from "@/pages/Login";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import PdfConverter from "@/pages/PdfConverter";
+import Clients from "@/pages/Clients";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,8 @@ const App = () => (
                 <Route path="/documents" element={<Documents />} />
                 <Route path="/guide" element={<UserGuide />} />
                 <Route path="/activity" element={<ActivityLog />} />
+                <Route path="/pdf-converter" element={<PdfConverter />} />
+                <Route path="/clients" element={<Clients />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>

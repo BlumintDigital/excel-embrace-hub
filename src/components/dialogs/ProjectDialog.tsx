@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateProject, useUpdateProject } from "@/hooks/use-supabase-mutations";
+import { useClients } from "@/hooks/use-supabase-data";
 import type { DbProject } from "@/hooks/use-supabase-data";
 
 interface Props {
@@ -23,9 +24,11 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
   const [budgetProjected, setBudgetProjected] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [clientId, setClientId] = useState("");
 
   const create = useCreateProject();
   const update = useUpdateProject();
+  const { data: clients = [] } = useClients();
   const isEdit = !!project;
 
   useEffect(() => {
@@ -36,13 +39,14 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
       setBudgetProjected(String(project.budget_projected || ""));
       setStartDate(project.start_date || "");
       setEndDate(project.end_date || "");
+      setClientId(project.client_id || "");
     } else {
-      setName(""); setDescription(""); setStatus("Planning"); setBudgetProjected(""); setStartDate(""); setEndDate("");
+      setName(""); setDescription(""); setStatus("Planning"); setBudgetProjected(""); setStartDate(""); setEndDate(""); setClientId("");
     }
   }, [project, open]);
 
   const handleSubmit = async () => {
-    const data = { name: name.trim(), description: description.trim() || undefined, status, budget_projected: Number(budgetProjected) || 0, start_date: startDate || undefined, end_date: endDate || undefined };
+    const data = { name: name.trim(), description: description.trim() || undefined, status, budget_projected: Number(budgetProjected) || 0, start_date: startDate || undefined, end_date: endDate || undefined, client_id: clientId || undefined };
     if (!data.name) return;
     if (isEdit) {
       await update.mutateAsync({ id: project!.id, ...data });
@@ -62,6 +66,15 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
           <div><Label>Status</Label>
             <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{statuses.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Client</Label>
+            <Select value={clientId || "__none"} onValueChange={(v) => setClientId(v === "__none" ? "" : v)}>
+              <SelectTrigger><SelectValue placeholder="No client" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">— No client —</SelectItem>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
             </Select>
           </div>
           <div><Label>Budget Projected ($)</Label><Input type="number" value={budgetProjected} onChange={(e) => setBudgetProjected(e.target.value)} placeholder="0" /></div>

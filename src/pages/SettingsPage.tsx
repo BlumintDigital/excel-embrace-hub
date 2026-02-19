@@ -120,14 +120,14 @@ export default function SettingsPage() {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-4xl">
       <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="font-heading text-xl font-semibold">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
           Manage your profile, workspace, and preferences
         </p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4 hidden sm:block" />
             Profile
@@ -323,7 +323,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label>Currency</Label>
                 <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className="w-full sm:w-64">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

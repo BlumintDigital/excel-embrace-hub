@@ -60,12 +60,12 @@ export default function Budget() {
           <h1 className="font-heading text-xl font-semibold">Budget</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Track projected vs. actual costs</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
           <Select value={activeProjectId} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-64"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-64"><SelectValue /></SelectTrigger>
             <SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
           </Select>
-          {canManageBudget && <Button onClick={() => { setEditCat(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />Add Category</Button>}
+          {canManageBudget && <Button className="w-full sm:w-auto justify-center" onClick={() => { setEditCat(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-2" />Add Category</Button>}
         </div>
       </div>
 
@@ -128,6 +128,7 @@ export default function Budget() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Budget Details</CardTitle></CardHeader>
             <CardContent className="p-0">
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b text-left text-xs text-muted-foreground">
@@ -174,6 +175,7 @@ export default function Budget() {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </CardContent>
           </Card>
         </>

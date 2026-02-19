@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, MoreHorizontal, Pencil, Trash2, ListTodo } from "lucide-react";
+import { Loader2, Plus, MoreHorizontal, Pencil, Trash2, ListTodo, Search } from "lucide-react";
 import { useTasks, useTeamMembers, useProjects, DbTask } from "@/hooks/use-supabase-data";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -29,6 +30,7 @@ export default function Tasks() {
   const [editTask, setEditTask] = useState<DbTask | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   const { data: tasks = [], isLoading } = useTasks();
   const { data: team = [] } = useTeamMembers();
@@ -37,9 +39,14 @@ export default function Tasks() {
   const updateTask = useUpdateTask();
   const { canCreateTasks, canEditAllTasks, canDeleteAllTasks } = usePermissions();
 
-  const filteredTasks = selectedProject === "all"
-    ? tasks
-    : tasks.filter((t) => t.project_id === selectedProject);
+  const filteredTasks = useMemo(() => {
+    let result = selectedProject === "all" ? tasks : tasks.filter((t) => t.project_id === selectedProject);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q));
+    }
+    return result;
+  }, [tasks, selectedProject, search]);
 
   const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
     updateTask.mutate({ id: taskId, status: newStatus });
@@ -88,6 +95,15 @@ export default function Tasks() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              className="pl-8 h-8 text-sm w-40"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <Select value={selectedProject} onValueChange={setSelectedProject}>
             <SelectTrigger className="w-48 h-8 text-sm">
               <SelectValue placeholder="All Projects" />
@@ -210,17 +226,18 @@ export default function Tasks() {
         /* List/Table View */
         <Card>
           <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border text-left">
                   <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Task</th>
                   {selectedProject === "all" && (
-                    <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Project</th>
+                    <th className="hidden sm:table-cell px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Project</th>
                   )}
                   <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Assignee</th>
                   <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Priority</th>
                   <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Due</th>
+                  <th className="hidden sm:table-cell px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Due</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
@@ -230,9 +247,9 @@ export default function Tasks() {
                   const project = projects.find((p) => p.id === task.project_id);
                   return (
                     <tr key={task.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium">{task.title}</td>
+                      <td className="px-4 py-3 text-sm font-medium max-w-[140px] sm:max-w-none truncate">{task.title}</td>
                       {selectedProject === "all" && (
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{project?.name || "—"}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-sm text-muted-foreground">{project?.name || "—"}</td>
                       )}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
@@ -241,7 +258,7 @@ export default function Tasks() {
                               {(assignee?.full_name || "?").split(" ").map((n) => n[0]).join("")}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="hidden sm:inline text-sm text-muted-foreground">
                             {assignee?.full_name?.split(" ")[0] || "—"}
                           </span>
                         </div>
@@ -252,7 +269,7 @@ export default function Tasks() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3"><StatusBadge task={task} /></td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      <td className="hidden sm:table-cell px-4 py-3 text-sm text-muted-foreground">
                         {task.due_date
                           ? new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                           : "—"
@@ -284,6 +301,7 @@ export default function Tasks() {
                 })}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}
