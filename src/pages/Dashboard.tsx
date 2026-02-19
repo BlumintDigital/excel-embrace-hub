@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FolderKanban, ListTodo, DollarSign, Users, TrendingUp, TrendingDown, ArrowRight, Loader2, Plus } from "lucide-react";
+import { FolderKanban, ListTodo, DollarSign, Users, TrendingUp, TrendingDown, ArrowRight, Plus } from "lucide-react";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Label } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Label } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { useProjects, useTasks, useTeamMembers, useBudgetCategories } from "@/hooks/use-supabase-data";
 import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
 import { STATUS_DOT_COLORS, STATUS_BADGE_CLASSES, PRIORITY_DOT_COLORS, CHART_COLORS } from "@/lib/status-config";
@@ -26,13 +31,7 @@ export default function Dashboard() {
 
   const isLoading = loadingProjects || loadingTasks || loadingTeam;
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <DashboardSkeleton />;
 
   // --- Stat card totals always reflect ALL projects ---
   const activeProjects = projects.filter((p) => p.status !== "Completed").length;
@@ -71,6 +70,17 @@ export default function Dashboard() {
 
   const selectedProjectName = projects.find((p) => p.id === selectedProject)?.name;
 
+  const budgetChartConfig = {
+    Projected: { label: "Projected", color: "hsl(var(--primary))" },
+    Actual:    { label: "Actual",    color: "hsl(var(--muted-foreground) / 0.35)" },
+  } satisfies ChartConfig;
+
+  const taskChartConfig = {
+    "To Do":       { label: "To Do",       color: CHART_COLORS[0] },
+    "In Progress": { label: "In Progress", color: CHART_COLORS[1] },
+    "Done":        { label: "Done",        color: CHART_COLORS[2] },
+  } satisfies ChartConfig;
+
   const cards = [
     { label: "Active Projects", value: activeProjects, icon: FolderKanban, sub: `${projects.length} total`, up: true },
     { label: "Active Tasks", value: activeTasks, icon: ListTodo, sub: `${tasks.length} total`, up: false },
@@ -81,32 +91,36 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Workspace overview</p>
-        </div>
-        <Link to="/projects">
-          <Button size="sm" className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" />
-            New Project
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Workspace overview"
+        action={
+          <Link to="/projects">
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" />
+              New Project
+            </Button>
+          </Link>
+        }
+      />
 
       {projects.length === 0 && tasks.length === 0 ? (
         /* Empty State */
         <Card>
-          <CardContent className="p-12 text-center">
-            <FolderKanban className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-heading font-semibold text-base">No data yet</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-5">
-              Create your first project to start tracking your work.
-            </p>
+          <CardContent className="py-20 flex flex-col items-center text-center gap-4">
+            <div className="rounded-full bg-primary/10 p-5">
+              <FolderKanban className="h-10 w-10 text-primary" />
+            </div>
+            <div className="space-y-1.5 max-w-sm">
+              <h3 className="font-heading font-semibold text-lg">Welcome to your workspace</h3>
+              <p className="text-sm text-muted-foreground">
+                Create your first project to start tracking work, budgets, and your team's progress.
+              </p>
+            </div>
             <Link to="/projects">
               <Button size="sm" className="gap-1.5">
                 <Plus className="h-3.5 w-3.5" />
-                Create project
+                Create first project
               </Button>
             </Link>
           </CardContent>
@@ -135,12 +149,17 @@ export default function Dashboard() {
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">{card.label}</p>
                     <p className="text-xs text-muted-foreground mt-2">{card.sub}</p>
                     {"budgetPct" in card && (
-                      <div className="mt-3 h-1 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${Math.min(card.budgetPct as number, 100)}%` }}
-                        />
-                      </div>
+                      <Progress
+                        value={Math.min(card.budgetPct as number, 100)}
+                        className={cn(
+                          "mt-3 h-1.5",
+                          (card.budgetPct as number) > 85
+                            ? "[&>*]:bg-destructive"
+                            : (card.budgetPct as number) > 60
+                            ? "[&>*]:bg-warning"
+                            : "[&>*]:bg-success"
+                        )}
+                      />
                     )}
                   </CardContent>
                 </Card>
@@ -203,7 +222,7 @@ export default function Dashboard() {
                       No budget data for this project yet
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height={260}>
+                    <ChartContainer config={budgetChartConfig} className="h-[260px] w-full">
                       <BarChart data={budgetChartData} barGap={4}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
@@ -212,19 +231,17 @@ export default function Dashboard() {
                           stroke="hsl(var(--muted-foreground))"
                           tickFormatter={(v) => `${v}k`}
                         />
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: "0.5rem",
-                            border: "1px solid hsl(var(--border))",
-                            background: "hsl(var(--card))",
-                            fontSize: "12px",
-                          }}
-                          formatter={(value: number, name: string) => [`${cur.symbol}${value}k`, name]}
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value) => <span>{`${cur.symbol}${value}k`}</span>}
+                            />
+                          }
                         />
                         <Bar dataKey="Projected" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
                         <Bar dataKey="Actual" fill="hsl(var(--muted-foreground) / 0.35)" radius={[3, 3, 0, 0]} />
                       </BarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                   )}
                 </CardContent>
               </Card>
@@ -246,7 +263,7 @@ export default function Dashboard() {
                       No tasks for this project
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height={180}>
+                    <ChartContainer config={taskChartConfig} className="h-[180px] w-full">
                       <PieChart>
                         <Pie
                           data={taskDistribution}
@@ -271,16 +288,9 @@ export default function Dashboard() {
                             }}
                           />
                         </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: "0.5rem",
-                            border: "1px solid hsl(var(--border))",
-                            background: "hsl(var(--card))",
-                            fontSize: "12px",
-                          }}
-                        />
+                        <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                       </PieChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                   )}
                   {totalFilteredTasks > 0 && (
                     <>
@@ -347,12 +357,17 @@ export default function Dashboard() {
                         </div>
                         <div className="flex flex-col items-end gap-1 ml-4 shrink-0">
                           <span className="text-xs text-muted-foreground">{progress}%</span>
-                          <div className="h-1 w-16 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-primary transition-all"
-                              style={{ width: `${Math.min(progress, 100)}%` }}
-                            />
-                          </div>
+                          <Progress
+                            value={Math.min(progress, 100)}
+                            className={cn(
+                              "h-1.5 w-16",
+                              progress > 85
+                                ? "[&>*]:bg-destructive"
+                                : progress > 60
+                                ? "[&>*]:bg-warning"
+                                : "[&>*]:bg-success"
+                            )}
+                          />
                         </div>
                       </div>
                     );

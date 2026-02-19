@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { Plus, Search, Loader2, MoreHorizontal, Pencil, Trash2, Users, FolderKanban } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, FolderKanban } from "lucide-react";
+import { ProjectsSkeleton } from "@/components/skeletons/ProjectsSkeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { MemberHoverCard } from "@/components/MemberHoverCard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useProjects, useTasks, useProjectMembers, useTeamMembers, DbProject } from "@/hooks/use-supabase-data";
@@ -26,14 +32,9 @@ export default function Projects() {
   const { data: team = [] } = useTeamMembers();
   const deleteProject = useDeleteProject();
   const { canCreateProjects, canEditAllProjects, canDeleteProjects } = usePermissions();
+  const navigate = useNavigate();
 
-  if (lp) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (lp) return <ProjectsSkeleton />;
 
   const filtered = projects.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -42,17 +43,15 @@ export default function Projects() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Projects</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{projects.length} total</p>
-        </div>
-        {canCreateProjects && (
+      <PageHeader
+        title="Projects"
+        subtitle={`${projects.length} total`}
+        action={canCreateProjects ? (
           <Button size="sm" onClick={() => { setEditProject(null); setDialogOpen(true); }}>
             <Plus className="h-3.5 w-3.5 mr-1.5" /> New Project
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Search */}
       <div className="relative max-w-xs">
@@ -68,12 +67,25 @@ export default function Projects() {
       {/* Empty state */}
       {filtered.length === 0 ? (
         <Card>
-          <CardContent className="p-10 text-center">
-            <FolderKanban className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm font-medium">No projects found</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {search ? "Try a different search term." : "Create your first project to get started."}
-            </p>
+          <CardContent className="py-16 flex flex-col items-center text-center gap-4">
+            <div className="rounded-full bg-primary/10 p-4">
+              <FolderKanban className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1.5 max-w-xs">
+              <p className="font-heading font-semibold text-base">
+                {search ? "No projects match" : "No projects yet"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {search
+                  ? `No results for "${search}". Try adjusting your search.`
+                  : "Create your first project to start tracking work across your team."}
+              </p>
+            </div>
+            {!search && canCreateProjects && (
+              <Button size="sm" onClick={() => { setEditProject(null); setDialogOpen(true); }}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Create Project
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -91,7 +103,8 @@ export default function Projects() {
             return (
               <Card
                 key={project.id}
-                className="hover:border-primary/40 transition-colors"
+                className="hover:border-primary/40 transition-colors cursor-pointer hover:shadow-sm"
+                onClick={() => navigate(`/projects/${project.id}`)}
               >
                 <CardContent className="p-4 space-y-3">
                   {/* Title row */}
@@ -109,7 +122,7 @@ export default function Projects() {
                       <span className="text-xs text-muted-foreground">{project.status}</span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -141,27 +154,39 @@ export default function Projects() {
                       <span>Budget used</span>
                       <span>{progress}%</span>
                     </div>
-                    <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${Math.min(progress, 100)}%` }}
-                      />
-                    </div>
+                    <Progress
+                      value={Math.min(progress, 100)}
+                      className={cn(
+                        "h-1.5",
+                        progress > 85
+                          ? "[&>*]:bg-destructive"
+                          : progress > 60
+                          ? "[&>*]:bg-warning"
+                          : "[&>*]:bg-success"
+                      )}
+                    />
                   </div>
 
                   {/* Footer */}
                   <div className="flex items-center justify-between pt-0.5">
                     <div
-                      className="flex -space-x-1.5 cursor-pointer"
-                      onClick={() => setMembersProject(project)}
+                      className="flex -space-x-1.5"
+                      onClick={(e) => { e.stopPropagation(); setMembersProject(project); }}
                     >
-                      {projectTeam.slice(0, 4).map((u) => (
-                        <Avatar key={u.id} className="h-6 w-6 border-2 border-card">
-                          <AvatarFallback className="text-[9px] bg-muted text-muted-foreground">
-                            {(u.full_name || "?").split(" ").map((n) => n[0]).join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
+                      {projectTeam.slice(0, 4).map((u) => {
+                        const memberActiveTasks = tasks.filter(
+                          (t) => t.assignee_id === u.id && t.status !== "Done"
+                        ).length;
+                        return (
+                          <MemberHoverCard key={u.id} member={u} activeTasks={memberActiveTasks}>
+                            <Avatar className="h-6 w-6 border-2 border-card cursor-pointer">
+                              <AvatarFallback className="text-[9px] bg-muted text-muted-foreground">
+                                {(u.full_name || "?").split(" ").map((n) => n[0]).join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                          </MemberHoverCard>
+                        );
+                      })}
                       {projectTeam.length === 0 && (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Users className="h-3 w-3" />No members

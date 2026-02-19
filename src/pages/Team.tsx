@@ -1,11 +1,14 @@
 import { useState, useMemo } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { MemberHoverCard } from "@/components/MemberHoverCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, MoreHorizontal, Shield, ShieldCheck, UserCog, Trash2, Users, Search } from "lucide-react";
+import { Plus, MoreHorizontal, Shield, ShieldCheck, UserCog, Trash2, Users, Search } from "lucide-react";
+import { TeamSkeleton } from "@/components/skeletons/TeamSkeleton";
 import { useTeamMembers, useProjectMembers, useTasks } from "@/hooks/use-supabase-data";
 import { useUpdateUserRole, useDeleteUser } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -35,47 +38,52 @@ export default function Team() {
     );
   }, [members, search]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <TeamSkeleton />;
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Team</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{members.length} member{members.length !== 1 ? "s" : ""}</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              className="pl-8 h-8 text-sm w-44"
-              placeholder="Search members..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      <PageHeader
+        title="Team"
+        subtitle={`${members.length} member${members.length !== 1 ? "s" : ""}`}
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                className="pl-8 h-8 text-sm w-44"
+                placeholder="Search members..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            {canManageUsers && (
+              <Button size="sm" onClick={() => setInviteOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Invite User
+              </Button>
+            )}
           </div>
-          {canManageUsers && (
-            <Button size="sm" onClick={() => setInviteOpen(true)}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" /> Invite User
-            </Button>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Table / Cards */}
       {members.length === 0 ? (
         <Card>
-          <CardContent className="p-10 text-center">
-            <Users className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm font-medium">No team members yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Invite users to join your workspace.</p>
+          <CardContent className="py-16 flex flex-col items-center text-center gap-4">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Users className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1.5 max-w-xs">
+              <p className="font-heading font-semibold text-base">No team members yet</p>
+              <p className="text-sm text-muted-foreground">
+                Invite users to collaborate on projects and tasks in your workspace.
+              </p>
+            </div>
+            {canManageUsers && (
+              <Button size="sm" onClick={() => setInviteOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Invite User
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -93,11 +101,13 @@ export default function Team() {
               return (
                 <Card key={member.id}>
                   <CardContent className="p-3 flex items-center gap-3">
-                    <Avatar className="h-9 w-9 shrink-0">
-                      <AvatarFallback className="text-[11px] bg-muted text-muted-foreground font-medium">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <MemberHoverCard member={member} activeTasks={activeTasks}>
+                      <Avatar className="h-9 w-9 shrink-0 cursor-default">
+                        <AvatarFallback className="text-[11px] bg-muted text-muted-foreground font-medium">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    </MemberHoverCard>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-medium truncate">{member.full_name || "Unknown"}</span>
@@ -183,11 +193,13 @@ export default function Team() {
                           {/* Member */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-7 w-7 shrink-0">
-                                <AvatarFallback className="text-[10px] bg-muted text-muted-foreground font-medium">
-                                  {initials}
-                                </AvatarFallback>
-                              </Avatar>
+                              <MemberHoverCard member={member} activeTasks={activeTasks}>
+                                <Avatar className="h-7 w-7 shrink-0 cursor-default">
+                                  <AvatarFallback className="text-[10px] bg-muted text-muted-foreground font-medium">
+                                    {initials}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </MemberHoverCard>
                               <div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-sm font-medium">{member.full_name || "Unknown"}</span>

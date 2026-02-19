@@ -3,13 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Building2, Plus, Search, MoreHorizontal, Pencil, Trash2, Mail, Phone, FolderKanban, Loader2 } from "lucide-react";
+import { Building2, Plus, Search, MoreHorizontal, Pencil, Trash2, Mail, Phone, FolderKanban } from "lucide-react";
+import { ClientsSkeleton } from "@/components/skeletons/ClientsSkeleton";
 import { useClients, useProjects } from "@/hooks/use-supabase-data";
 import { useDeleteClient } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
 import { STATUS_DOT_COLORS, STATUS_BADGE_CLASSES } from "@/lib/status-config";
 import ClientDialog from "@/components/dialogs/ClientDialog";
 import type { DbClient } from "@/hooks/use-supabase-data";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Clients() {
   const { data: clients = [], isLoading: lc } = useClients();
@@ -34,31 +36,21 @@ export default function Clients() {
   const openEdit = (c: DbClient) => { setEditingClient(c); setDialogOpen(true); };
   const handleDelete = (id: string) => deleteClient.mutate(id);
 
-  if (lc || lp) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (lc || lp) return <ClientsSkeleton />;
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Manage clients and view their associated projects
-          </p>
-        </div>
-        {canCreateProjects && (
-          <Button onClick={openCreate} className="gap-2">
-            <Plus className="h-4 w-4" />
+      <PageHeader
+        title="Clients"
+        subtitle="Manage clients and view their associated projects"
+        action={canCreateProjects ? (
+          <Button size="sm" onClick={openCreate} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" />
             Add Client
           </Button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Search */}
       <div className="relative max-w-sm">
@@ -74,26 +66,33 @@ export default function Clients() {
       {/* Empty state */}
       {clients.length === 0 ? (
         <Card>
-          <CardContent className="p-12 flex flex-col items-center text-center gap-4">
-            <Building2 className="h-12 w-12 text-muted-foreground/40" />
-            <div>
-              <p className="font-medium text-foreground">No clients yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add your first client and link them to projects.
+          <CardContent className="py-16 flex flex-col items-center text-center gap-4">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Building2 className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1.5 max-w-xs">
+              <p className="font-heading font-semibold text-base">No clients yet</p>
+              <p className="text-sm text-muted-foreground">
+                Add your first client and link them to projects for better organization.
               </p>
             </div>
             {canCreateProjects && (
-              <Button onClick={openCreate} variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Client
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Client
               </Button>
             )}
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            No clients match your search.
+          <CardContent className="py-12 flex flex-col items-center text-center gap-3">
+            <div className="rounded-full bg-muted p-3">
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-sm">No clients match</p>
+              <p className="text-xs text-muted-foreground">Try adjusting your search term.</p>
+            </div>
           </CardContent>
         </Card>
       ) : (

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, FolderKanban, ListTodo, DollarSign, FileText, Users, Shield, Clock, FileOutput, Building2, Search } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useActivityLogs } from "@/hooks/use-activity-logs";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 
@@ -94,12 +95,10 @@ export default function ActivityLog() {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Activity Log</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Track all changes across the platform</p>
-        </div>
-        {(monthOptions.length > 0 || logs.length > 0) && (
+      <PageHeader
+        title="Activity Log"
+        subtitle="Track all changes across the platform"
+        action={(monthOptions.length > 0 || logs.length > 0) ? (
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -111,34 +110,46 @@ export default function ActivityLog() {
               />
             </div>
             {monthOptions.length > 0 && (
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-44">
-              <SelectValue placeholder="All time" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              <SelectItem value="all">All time</SelectItem>
-              {monthOptions.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {format(parseISO(`${m}-01`), "MMMM yyyy")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-            </Select>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All time" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All time</SelectItem>
+                  {monthOptions.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {format(parseISO(`${m}-01`), "MMMM yyyy")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {logs.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            No activity recorded yet. Actions will appear here as team members make changes.
+          <CardContent className="py-16 flex flex-col items-center text-center gap-4">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Clock className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1.5 max-w-xs">
+              <p className="font-heading font-semibold text-base">No activity yet</p>
+              <p className="text-sm text-muted-foreground">Actions will appear here as team members make changes.</p>
+            </div>
           </CardContent>
         </Card>
       ) : filtered.length === 0 ? (
         <Card>
-          <CardContent className="p-8 text-center text-muted-foreground">
-            No activity in the selected month.
+          <CardContent className="py-12 flex flex-col items-center text-center gap-3">
+            <div className="rounded-full bg-muted p-3">
+              <Search className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-sm">No matching activity</p>
+              <p className="text-xs text-muted-foreground">Try adjusting your search or month filter.</p>
+            </div>
           </CardContent>
         </Card>
       ) : (

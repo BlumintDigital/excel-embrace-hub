@@ -14,12 +14,13 @@ interface Props {
   task?: DbTask | null;
   projects: DbProject[];
   team: TeamMember[];
+  defaultProjectId?: string;
 }
 
 const statusOptions = ["To Do", "In Progress", "Done"];
 const priorityOptions = ["High", "Medium", "Low"];
 
-export default function TaskDialog({ open, onOpenChange, task, projects, team }: Props) {
+export default function TaskDialog({ open, onOpenChange, task, projects, team, defaultProjectId }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("To Do");
@@ -37,7 +38,7 @@ export default function TaskDialog({ open, onOpenChange, task, projects, team }:
       setTitle(task.title); setDescription(task.description || ""); setStatus(task.status);
       setPriority(task.priority); setProjectId(task.project_id || ""); setAssigneeId(task.assignee_id || ""); setDueDate(task.due_date || "");
     } else {
-      setTitle(""); setDescription(""); setStatus("To Do"); setPriority("Medium"); setProjectId(""); setAssigneeId(""); setDueDate("");
+      setTitle(""); setDescription(""); setStatus("To Do"); setPriority("Medium"); setProjectId(defaultProjectId || ""); setAssigneeId(""); setDueDate("");
     }
   }, [task, open]);
 

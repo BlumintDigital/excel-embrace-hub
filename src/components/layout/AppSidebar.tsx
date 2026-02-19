@@ -16,7 +16,11 @@ import {
   Activity,
   FileOutput,
   Building2,
+  Sun,
+  Moon,
+  Search,
 } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 import logoWhite from "@/assets/logo-white.png";
 import logoColor from "@/assets/logo-color.png";
 import { cn } from "@/lib/utils";
@@ -24,6 +28,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCommandPalette } from "@/contexts/CommandPaletteContext";
 
 const navGroups = [
   {
@@ -59,7 +64,12 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { profile, role, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
+  const { setOpen: openPalette } = useCommandPalette();
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "??";
@@ -88,8 +98,20 @@ export function AppSidebar() {
 
       <Separator className="bg-sidebar-border" />
 
+      {/* Search trigger */}
+      <div className="px-3 pt-2.5 pb-1">
+        <button
+          onClick={() => openPalette(true)}
+          className="flex w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/30 px-3 py-1.5 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
+        >
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1 text-left">Search...</span>
+          <kbd className="rounded bg-sidebar-border px-1.5 py-0.5 text-[10px] font-mono">⌘K</kbd>
+        </button>
+      </div>
+
       {/* Nav Groups */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
         {navGroups.map((group, gi) => (
           <div key={gi}>
             {group.label && (
@@ -146,6 +168,13 @@ export function AppSidebar() {
             </div>
             <Settings className="h-3.5 w-3.5 text-sidebar-muted shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
+          <button
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors"
+          >
+            {isDark ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
+            {isDark ? "Light Mode" : "Dark Mode"}
+          </button>
           <button
             onClick={handleSignOut}
             className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground transition-colors"

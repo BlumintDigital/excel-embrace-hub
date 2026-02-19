@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -7,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, MoreHorizontal, Pencil, Trash2, ListTodo, Search } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, ListTodo, Search } from "lucide-react";
+import { TasksSkeleton } from "@/components/skeletons/TasksSkeleton";
 import { useTasks, useTeamMembers, useProjects, DbTask } from "@/hooks/use-supabase-data";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-supabase-mutations";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -52,13 +54,7 @@ export default function Tasks() {
     updateTask.mutate({ id: taskId, status: newStatus });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <TasksSkeleton />;
 
   const StatusBadge = ({ task }: { task: DbTask }) => (
     <DropdownMenu>
@@ -86,48 +82,45 @@ export default function Tasks() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Tasks</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filteredTasks.length} task{filteredTasks.length !== 1 ? "s" : ""}
-            {selectedProject === "all" ? " across all projects" : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              className="pl-8 h-8 text-sm w-40"
-              placeholder="Search tasks..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      <PageHeader
+        title="Tasks"
+        subtitle={`${filteredTasks.length} task${filteredTasks.length !== 1 ? "s" : ""}${selectedProject === "all" ? " across all projects" : ""}`}
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                className="pl-8 h-8 text-sm w-40"
+                placeholder="Search tasks..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-48 h-8 text-sm">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Tabs value={view} onValueChange={(v) => setView(v as "board" | "list")}>
+              <TabsList className="h-8">
+                <TabsTrigger value="board" className="text-xs px-3">Board</TabsTrigger>
+                <TabsTrigger value="list" className="text-xs px-3">List</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {canCreateTasks && (
+              <Button size="sm" onClick={() => { setEditTask(null); setDialogOpen(true); }}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" />New Task
+              </Button>
+            )}
           </div>
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-48 h-8 text-sm">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Tabs value={view} onValueChange={(v) => setView(v as "board" | "list")}>
-            <TabsList className="h-8">
-              <TabsTrigger value="board" className="text-xs px-3">Board</TabsTrigger>
-              <TabsTrigger value="list" className="text-xs px-3">List</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {canCreateTasks && (
-            <Button size="sm" onClick={() => { setEditTask(null); setDialogOpen(true); }}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" />New Task
-            </Button>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Empty state */}
       {filteredTasks.length === 0 ? (

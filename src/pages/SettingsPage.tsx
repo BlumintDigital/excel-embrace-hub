@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
+import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -23,12 +25,16 @@ import {
   Shield,
   Save,
   Upload,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import logoColor from "@/assets/logo-color.png";
 
 export default function SettingsPage() {
   const { user, profile, role } = useAuth();
   const { settings, updateSettings } = useWorkspace();
+  const { theme, setTheme } = useTheme();
 
   // Profile state
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -119,12 +125,10 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-4xl">
-      <div>
-        <h1 className="font-heading text-xl font-semibold">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Manage your profile, workspace, and preferences
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        subtitle="Manage your profile, workspace, and preferences"
+      />
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-grid">
@@ -425,6 +429,34 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label>Color Scheme</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {([
+                    { value: "light", label: "Light", Icon: Sun },
+                    { value: "system", label: "System", Icon: Monitor },
+                    { value: "dark", label: "Dark", Icon: Moon },
+                  ] as const).map(({ value, label, Icon }) => (
+                    <button
+                      key={value}
+                      onClick={() => setTheme(value)}
+                      className={cn(
+                        "rounded-lg border-2 p-3 flex flex-col items-center gap-1.5 text-sm font-medium transition-colors focus:outline-none",
+                        theme === value ? "border-primary bg-primary/5" : "border-border hover:border-primary"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  "System" follows your OS dark/light mode preference.
+                </p>
+              </div>
+
+              <Separator />
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="primaryColor">Primary Color</Label>

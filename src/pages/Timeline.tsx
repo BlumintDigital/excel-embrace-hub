@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useTasks, useProjects, useTeamMembers } from "@/hooks/use-supabase-data";
 
 const statusColors: Record<string, string> = {
@@ -76,23 +77,23 @@ export default function Timeline() {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Timeline</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Project schedule and milestones</p>
-        </div>
-        <Select value={selectedProject} onValueChange={setSelectedProject}>
-          <SelectTrigger className="w-52">
-            <SelectValue placeholder="All Projects" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map((p) => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <PageHeader
+        title="Timeline"
+        subtitle="Project schedule and milestones"
+        action={
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="w-52">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
       <div className="flex gap-4 text-xs">
         {Object.entries(statusColors).map(([status, color]) => (

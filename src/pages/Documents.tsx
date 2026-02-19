@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FileText, Upload, Download, Eye, Loader2, MoreHorizontal, Trash2, Search } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/input";
 import { useDocuments, useProjects } from "@/hooks/use-supabase-data";
 import { useDeleteDocument } from "@/hooks/use-supabase-mutations";
@@ -51,42 +52,39 @@ export default function Documents() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="font-heading text-xl font-semibold">Documents</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filteredDocs.length} file{filteredDocs.length !== 1 ? "s" : ""}
-            {selectedProject === "all" ? " across all projects" : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              className="pl-8 h-8 text-sm w-44"
-              placeholder="Search documents..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      <PageHeader
+        title="Documents"
+        subtitle={`${filteredDocs.length} file${filteredDocs.length !== 1 ? "s" : ""}${selectedProject === "all" ? " across all projects" : ""}`}
+        action={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                className="pl-8 h-8 text-sm w-44"
+                placeholder="Search documents..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-48 h-8 text-sm">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {canManageDocuments && (
+              <Button size="sm" onClick={() => setDialogOpen(true)}>
+                <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
+              </Button>
+            )}
           </div>
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-48 h-8 text-sm">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {canManageDocuments && (
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
-              <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
-            </Button>
-          )}
-        </div>
-      </div>
+        }
+      />
 
       {/* Table */}
       <Card>

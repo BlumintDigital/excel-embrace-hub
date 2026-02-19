@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Upload, Download, AlertCircle, CheckCircle2, Loader2, X } from "lucide-react";
@@ -131,12 +132,10 @@ export default function PdfConverter() {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-2xl">
       {/* Header */}
-      <div>
-        <h1 className="font-heading text-xl font-semibold">PDF to Word</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Convert PDF files to editable Word documents (.docx)
-        </p>
-      </div>
+      <PageHeader
+        title="PDF to Word"
+        subtitle="Convert PDF files to editable Word documents (.docx)"
+      />
 
       {/* Drop zone */}
       <Card
