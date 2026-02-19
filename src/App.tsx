@@ -11,6 +11,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Projects from "@/pages/Projects";
 import ProjectDetail from "@/pages/ProjectDetail";
+import BulkImport from "@/pages/BulkImport";
 import Tasks from "@/pages/Tasks";
 import Budget from "@/pages/Budget";
 import Timeline from "@/pages/Timeline";
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/guide" element={<UserGuide />} />
                 <Route path="/activity" element={<ActivityLog />} />
                 <Route path="/pdf-converter" element={<PdfConverter />} />
+                <Route path="/import" element={<BulkImport />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
