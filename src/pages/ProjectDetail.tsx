@@ -95,8 +95,8 @@ export default function ProjectDetail() {
   const difference = totalProjected - totalActual;
   const barData = categories.map((c) => ({
     name: c.name,
-    Projected: (c.projected || 0) / 1000,
-    Actual: (c.actual || 0) / 1000,
+    Projected: c.projected || 0,
+    Actual: c.actual || 0,
   }));
   const pieData = categories.map((c) => ({ name: c.name, value: c.actual || 0 }));
 
@@ -207,7 +207,7 @@ export default function ProjectDetail() {
               className={cn("h-1.5", budgetPercent > 100 ? "[&>*]:bg-destructive" : budgetPercent > 80 ? "[&>*]:bg-warning" : "[&>*]:bg-success")}
             />
             <p className="text-xs text-muted-foreground">
-              {cur.symbol}{((project.budget_actual || 0) / 1000).toFixed(0)}k of {cur.symbol}{(project.budget_projected / 1000).toFixed(0)}k used
+              {fmt(project.budget_actual || 0)} of {fmt(project.budget_projected)} used
             </p>
           </CardContent>
         </Card>
@@ -491,9 +491,9 @@ export default function ProjectDetail() {
           {/* Summary cards */}
           <div className="grid gap-4 sm:grid-cols-3">
             {[
-              { label: "Projected Budget", value: `${cur.symbol}${(totalProjected / 1000).toFixed(0)}k` },
-              { label: "Actual Spent", value: `${cur.symbol}${(totalActual / 1000).toFixed(0)}k` },
-              { label: "Remaining", value: `${difference >= 0 ? "+" : ""}${cur.symbol}${(Math.abs(difference) / 1000).toFixed(0)}k`, warn: difference < 0 },
+              { label: "Projected Budget", value: fmt(totalProjected) },
+              { label: "Actual Spent", value: fmt(totalActual) },
+              { label: "Remaining", value: `${difference >= 0 ? "+" : "-"}${fmt(Math.abs(difference))}`, warn: difference < 0 },
             ].map((card) => (
               <Card key={card.label}>
                 <CardContent className="p-5">
@@ -526,8 +526,8 @@ export default function ProjectDetail() {
                       <BarChart data={barData} barGap={4}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                        <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${v}k`} />
-                        <ChartTooltip content={<ChartTooltipContent formatter={(value) => <span>{`${cur.symbol}${value}k`}</span>} />} />
+                        <YAxis width={80} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => (v as number).toLocaleString()} />
+                        <ChartTooltip content={<ChartTooltipContent formatter={(value) => <span>{fmt(Number(value))}</span>} />} />
                         <Bar dataKey="Projected" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="Actual" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -542,7 +542,7 @@ export default function ProjectDetail() {
                         <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={78} paddingAngle={3} dataKey="value">
                           {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                         </Pie>
-                        <ChartTooltip content={<ChartTooltipContent hideLabel formatter={(value) => <span>{`${cur.symbol}${(Number(value) / 1000).toFixed(1)}k`}</span>} />} />
+                        <ChartTooltip content={<ChartTooltipContent hideLabel formatter={(value) => <span>{fmt(Number(value))}</span>} />} />
                       </PieChart>
                     </ChartContainer>
                     <div className="flex flex-wrap gap-2 justify-center mt-1">

@@ -52,13 +52,13 @@ export default function Dashboard() {
   const budgetChartData = selectedProject === "all"
     ? projects.map((p) => ({
         name: p.name.split(" ").slice(0, 2).join(" "),
-        Projected: (p.budget_projected || 0) / 1000,
-        Actual: (p.budget_actual || 0) / 1000,
+        Projected: p.budget_projected || 0,
+        Actual: p.budget_actual || 0,
       }))
     : categories.map((c) => ({
         name: c.name,
-        Projected: (c.projected || 0) / 1000,
-        Actual: (c.actual || 0) / 1000,
+        Projected: c.projected || 0,
+        Actual: c.actual || 0,
       }));
 
   const taskDistribution = [
@@ -84,7 +84,7 @@ export default function Dashboard() {
   const cards = [
     { label: "Active Projects", value: activeProjects, icon: FolderKanban, sub: `${projects.length} total`, up: true },
     { label: "Active Tasks", value: activeTasks, icon: ListTodo, sub: `${tasks.length} total`, up: false },
-    { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, sub: `${cur.symbol}${(totalBudgetActual / 1000).toFixed(0)}k of ${cur.symbol}${(totalBudgetProjected / 1000).toFixed(0)}k`, up: budgetPct < 60, budgetPct },
+    { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, sub: `${fmt(totalBudgetActual)} of ${fmt(totalBudgetProjected)}`, up: budgetPct < 60, budgetPct },
     { label: "Team Members", value: teamMembers.length, icon: Users, sub: "All active", up: true },
   ];
 
@@ -227,14 +227,15 @@ export default function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                         <YAxis
+                          width={80}
                           tick={{ fontSize: 11 }}
                           stroke="hsl(var(--muted-foreground))"
-                          tickFormatter={(v) => `${v}k`}
+                          tickFormatter={(v) => (v as number).toLocaleString()}
                         />
                         <ChartTooltip
                           content={
                             <ChartTooltipContent
-                              formatter={(value) => <span>{`${cur.symbol}${value}k`}</span>}
+                              formatter={(value) => <span>{fmt(Number(value))}</span>}
                             />
                           }
                         />

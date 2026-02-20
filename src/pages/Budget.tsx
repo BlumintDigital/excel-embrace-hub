@@ -32,7 +32,6 @@ export default function Budget() {
   const { settings } = useWorkspace();
   const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
   const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
-  const fmtK = (v: number) => `${cur.symbol}${(v / 1000).toFixed(0)}k`;
 
   if (lp) {
     return <div className="flex h-full items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -62,7 +61,7 @@ export default function Budget() {
   const difference = totalProjected - totalActual;
   const percentUsed = totalProjected > 0 ? Math.round((totalActual / totalProjected) * 100) : 0;
 
-  const barData = categories.map((c) => ({ name: c.name, Projected: (c.projected || 0) / 1000, Actual: (c.actual || 0) / 1000 }));
+  const barData = categories.map((c) => ({ name: c.name, Projected: c.projected || 0, Actual: c.actual || 0 }));
   const pieData = categories.map((c) => ({ name: c.name, value: c.actual || 0 }));
 
   const budgetBarConfig = {
@@ -97,9 +96,9 @@ export default function Budget() {
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: "Projected Budget", value: fmtK(totalProjected), icon: DollarSign, color: "text-primary" },
-          { label: "Actual Spent", value: fmtK(totalActual), icon: percentUsed > 80 ? TrendingDown : TrendingUp, color: percentUsed > 80 ? "text-destructive" : "text-success" },
-          { label: "Remaining", value: fmtK(difference), icon: difference < 0 ? AlertTriangle : DollarSign, color: difference < 0 ? "text-destructive" : "text-success" },
+          { label: "Projected Budget", value: fmt(totalProjected), icon: DollarSign, color: "text-primary" },
+          { label: "Actual Spent", value: fmt(totalActual), icon: percentUsed > 80 ? TrendingDown : TrendingUp, color: percentUsed > 80 ? "text-destructive" : "text-success" },
+          { label: "Remaining", value: `${difference >= 0 ? "+" : "-"}${fmt(Math.abs(difference))}`, icon: difference < 0 ? AlertTriangle : DollarSign, color: difference < 0 ? "text-destructive" : "text-success" },
         ].map((card, i) => (
           <Card key={card.label}>
             <CardContent className="p-5">
@@ -123,8 +122,8 @@ export default function Budget() {
                   <BarChart data={barData} barGap={4}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${v}k`} />
-                    <ChartTooltip content={<ChartTooltipContent formatter={(value) => <span>{`${cur.symbol}${value}k`}</span>} />} />
+                    <YAxis width={80} tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => (v as number).toLocaleString()} />
+                    <ChartTooltip content={<ChartTooltipContent formatter={(value) => <span>{fmt(Number(value))}</span>} />} />
                     <Bar dataKey="Projected" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                     <Bar dataKey="Actual" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} />
                   </BarChart>
@@ -139,7 +138,7 @@ export default function Budget() {
                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3} dataKey="value">
                       {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel formatter={(value) => <span>{`${cur.symbol}${(Number(value) / 1000).toFixed(1)}k`}</span>} />} />
+                    <ChartTooltip content={<ChartTooltipContent hideLabel formatter={(value) => <span>{fmt(Number(value))}</span>} />} />
                   </PieChart>
                 </ChartContainer>
                 <div className="flex flex-wrap gap-3 mt-2 justify-center">
