@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { useCreateTask, useUpdateTask } from "@/hooks/use-supabase-mutations";
 import type { DbTask, DbProject, TeamMember } from "@/hooks/use-supabase-data";
 
@@ -27,7 +32,7 @@ export default function TaskDialog({ open, onOpenChange, task, projects, team, d
   const [priority, setPriority] = useState("Medium");
   const [projectId, setProjectId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState<Date | undefined>();
 
   const create = useCreateTask();
   const update = useUpdateTask();
@@ -36,15 +41,16 @@ export default function TaskDialog({ open, onOpenChange, task, projects, team, d
   useEffect(() => {
     if (task) {
       setTitle(task.title); setDescription(task.description || ""); setStatus(task.status);
-      setPriority(task.priority); setProjectId(task.project_id || ""); setAssigneeId(task.assignee_id || ""); setDueDate(task.due_date || "");
+      setPriority(task.priority); setProjectId(task.project_id || ""); setAssigneeId(task.assignee_id || "");
+      setDueDate(task.due_date ? new Date(task.due_date + "T00:00:00") : undefined);
     } else {
-      setTitle(""); setDescription(""); setStatus("To Do"); setPriority("Medium"); setProjectId(defaultProjectId || ""); setAssigneeId(""); setDueDate("");
+      setTitle(""); setDescription(""); setStatus("To Do"); setPriority("Medium"); setProjectId(defaultProjectId || ""); setAssigneeId(""); setDueDate(undefined);
     }
   }, [task, open]);
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    const data = { title: title.trim(), description: description.trim() || undefined, status, priority, project_id: projectId || undefined, assignee_id: assigneeId || undefined, due_date: dueDate || undefined };
+    const data = { title: title.trim(), description: description.trim() || undefined, status, priority, project_id: projectId || undefined, assignee_id: assigneeId || undefined, due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined };
     if (isEdit) {
       await update.mutateAsync({ id: task!.id, ...data });
     } else {
@@ -82,7 +88,19 @@ export default function TaskDialog({ open, onOpenChange, task, projects, team, d
               <SelectContent>{team.map((u) => <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || "Unknown"}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>Due Date</Label><Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></div>
+          <div><Label>Due Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dueDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
