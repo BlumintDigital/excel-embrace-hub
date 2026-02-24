@@ -1,13 +1,17 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { SyncOnReconnect } from "@/components/SyncOnReconnect";
 import Dashboard from "@/pages/Dashboard";
 import Projects from "@/pages/Projects";
 import ProjectDetail from "@/pages/ProjectDetail";
@@ -27,15 +31,34 @@ import PdfConverter from "@/pages/PdfConverter";
 import Clients from "@/pages/Clients";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,        // 5 min — skip re-fetch on every navigation
+      gcTime:    1000 * 60 * 60 * 24,  // 24 hrs — keep data alive for offline use
+      retry: (count) => navigator.onLine && count < 2,
+    },
+  },
+});
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: "blumint-query-cache",
+  throttleTime: 1000,
+});
 
 const App = () => (
   <ThemeProvider>
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+  >
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <OfflineBanner />
+        <SyncOnReconnect />
         <AuthProvider>
         <WorkspaceProvider>
           <Routes>
@@ -66,7 +89,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
   </ThemeProvider>
 );
 

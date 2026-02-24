@@ -48,12 +48,16 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
   const handleSubmit = async () => {
     const data = { name: name.trim(), description: description.trim() || undefined, status, budget_projected: Number(budgetProjected) || 0, start_date: startDate || undefined, end_date: endDate || undefined, client_id: clientId || undefined };
     if (!data.name) return;
-    if (isEdit) {
-      await update.mutateAsync({ id: project!.id, ...data });
-    } else {
-      await create.mutateAsync(data);
+    try {
+      if (isEdit) {
+        await update.mutateAsync({ id: project!.id, ...data });
+      } else {
+        await create.mutateAsync(data);
+      }
+      onOpenChange(false);
+    } catch {
+      // onError in the mutation hook handles the toast
     }
-    onOpenChange(false);
   };
 
   return (

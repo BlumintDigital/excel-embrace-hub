@@ -28,6 +28,7 @@ export default function Dashboard() {
   );
   const { settings } = useWorkspace();
   const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
+  const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
 
   const isLoading = loadingProjects || loadingTasks || loadingTeam;
 
