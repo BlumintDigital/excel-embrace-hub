@@ -253,7 +253,7 @@ export default function Dashboard() {
               transition={{ delay: 0.28 }}
             >
               <Card>
-                <CardHeader className="flex-row items-center justify-between pb-2">
+                <CardHeader className="flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2">
                   <CardTitle className="text-sm font-semibold">
                     {selectedProject === "all" ? "Budget by Project" : "Budget by Category"} ({cur.code})
                   </CardTitle>
@@ -277,12 +277,17 @@ export default function Dashboard() {
                     <ChartContainer config={budgetChartConfig} className="h-[260px] w-full">
                       <BarChart data={budgetChartData} barGap={4}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                         <YAxis
-                          width={80}
-                          tick={{ fontSize: 11 }}
+                          width={55}
+                          tick={{ fontSize: 10 }}
                           stroke="hsl(var(--muted-foreground))"
-                          tickFormatter={(v) => (v as number).toLocaleString()}
+                          tickFormatter={(v) => {
+                            const num = v as number;
+                            if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+                            if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
+                            return num.toString();
+                          }}
                         />
                         <ChartTooltip
                           content={
