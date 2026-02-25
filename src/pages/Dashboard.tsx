@@ -252,7 +252,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.28 }}
             >
-              <Card>
+              <Card className="overflow-hidden">
                 <CardHeader className="flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-2">
                   <CardTitle className="text-sm font-semibold">
                     {selectedProject === "all" ? "Budget by Project" : "Budget by Category"} ({cur.code})
@@ -270,11 +270,11 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   {budgetChartData.length === 0 ? (
-                    <div className="flex items-center justify-center h-[260px] text-sm text-muted-foreground">
+                    <div className="flex items-center justify-center h-[200px] sm:h-[260px] text-sm text-muted-foreground">
                       No budget data for this project yet
                     </div>
                   ) : (
-                    <ChartContainer config={budgetChartConfig} className="h-[260px] w-full">
+                    <ChartContainer config={budgetChartConfig} className="h-[200px] sm:h-[260px] w-full">
                       <BarChart data={budgetChartData} barGap={4}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
@@ -311,17 +311,17 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.34 }}
             >
-              <Card className="h-full">
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle className="text-sm font-semibold">Task Distribution</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center">
                   {totalFilteredTasks === 0 ? (
-                    <div className="flex items-center justify-center h-[180px] text-sm text-muted-foreground">
+                    <div className="flex items-center justify-center h-[160px] sm:h-[180px] text-sm text-muted-foreground">
                       No tasks for this project
                     </div>
                   ) : (
-                    <ChartContainer config={taskChartConfig} className="h-[180px] w-full">
+                    <ChartContainer config={taskChartConfig} className="h-[160px] sm:h-[180px] w-full">
                       <PieChart>
                         <Pie
                           data={taskDistribution}

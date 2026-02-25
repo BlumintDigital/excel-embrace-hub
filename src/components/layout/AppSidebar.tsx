@@ -195,10 +195,10 @@ export function AppSidebar() {
     <>
       {/* Mobile top bar */}
       <div className="fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-4 bg-card border-b border-border lg:hidden">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileOpen(true)}>
-          <Menu className="h-4 w-4" />
+        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setMobileOpen(true)}>
+          <Menu className="h-5 w-5" />
         </Button>
-        <img src={logoColor} alt="Blumint Workspace" className="h-5 ml-2 object-contain max-w-[120px]" />
+        <img src={logoColor} alt="Blumint Workspace" className="h-6 ml-2 object-contain max-w-[120px]" />
         <NotificationBell />
       </div>
 

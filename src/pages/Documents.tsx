@@ -98,8 +98,58 @@ export default function Documents() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-            <table className="w-full">
+            <>
+              {/* ── Mobile card list ── */}
+              <div className="sm:hidden divide-y divide-border">
+                {filteredDocs.map((doc) => {
+                  const project = projects.find((p) => p.id === doc.project_id);
+                  const meta = [
+                    selectedProject === "all" && project?.name,
+                    formatFileSize(doc.size || 0),
+                    new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+                  ].filter(Boolean).join(" · ");
+                  return (
+                    <div key={doc.id} className="px-4 py-3 space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium truncate">{doc.name}</span>
+                        </div>
+                        {doc.category && (
+                          <Badge variant="secondary" className="text-[10px] shrink-0">{doc.category}</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">{meta}</p>
+                      <div className="flex items-center gap-1 pl-4">
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                          <Eye className="h-3.5 w-3.5" /> View
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1">
+                          <Download className="h-3.5 w-3.5" /> Download
+                        </Button>
+                        {canManageDocuments && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover z-50">
+                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(doc.id)}>
+                                <Trash2 className="h-3.5 w-3.5 mr-2" />Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ── Desktop table ── */}
+              <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full">
               <thead>
                 <tr className="border-b border-border text-left">
                   <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
@@ -190,6 +240,7 @@ export default function Documents() {
               </tbody>
             </table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>
