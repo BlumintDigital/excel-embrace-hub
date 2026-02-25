@@ -76,13 +76,13 @@ export default function Timeline() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <PageHeader
         title="Timeline"
         subtitle="Project schedule and milestones"
         action={
           <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-52">
+            <SelectTrigger className="w-full sm:w-52">
               <SelectValue placeholder="All Projects" />
             </SelectTrigger>
             <SelectContent className="bg-popover z-50">

@@ -147,7 +147,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-4xl">
       <PageHeader
         title="Settings"
         subtitle="Manage your profile, workspace, and preferences"

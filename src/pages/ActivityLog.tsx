@@ -93,7 +93,7 @@ export default function ActivityLog() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-3xl mx-auto">
       {/* Header */}
       <PageHeader
         title="Activity Log"
@@ -103,7 +103,7 @@ export default function ActivityLog() {
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                className="pl-8 h-8 text-sm w-44"
+                className="pl-8 h-8 text-sm w-full sm:w-44"
                 placeholder="Search activity..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -111,7 +111,7 @@ export default function ActivityLog() {
             </div>
             {monthOptions.length > 0 && (
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-44">
+                <SelectTrigger className="w-full sm:w-44">
                   <SelectValue placeholder="All time" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">

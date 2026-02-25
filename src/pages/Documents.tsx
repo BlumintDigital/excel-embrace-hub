@@ -50,7 +50,7 @@ export default function Documents() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <PageHeader
         title="Documents"
@@ -60,14 +60,14 @@ export default function Documents() {
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                className="pl-8 h-8 text-sm w-44"
+                className="pl-8 h-8 text-sm w-full sm:w-44"
                 placeholder="Search documents..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-48 h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-48 h-8 text-sm">
                 <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
@@ -98,6 +98,7 @@ export default function Documents() {
               </p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border text-left">
@@ -188,6 +189,7 @@ export default function Documents() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </CardContent>
       </Card>
