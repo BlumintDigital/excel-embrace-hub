@@ -8,6 +8,8 @@ export interface DbClient {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  address: string | null;
+  contact_person: string | null;
   created_by: string | null;
   created_at: string;
 }

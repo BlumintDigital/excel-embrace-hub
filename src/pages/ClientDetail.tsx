@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Loader2, Mail, Phone, FileText, DollarSign, FolderKanban, CalendarDays, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Mail, Phone, FileText, DollarSign, FolderKanban, CalendarDays, Pencil, Trash2, MapPin, UserCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,15 @@ export default function ClientDetail() {
                   </div>
                 </div>
               )}
+              {client.contact_person && (
+                <div className="flex items-start gap-2.5">
+                  <UserCircle className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-0.5">Key Contact</p>
+                    <span className="text-sm">{client.contact_person}</span>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-2.5">
                 <CalendarDays className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
@@ -122,6 +131,18 @@ export default function ClientDetail() {
               </div>
             </div>
 
+            {client.address && (
+              <>
+                <Separator />
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Address</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{client.address}</p>
+                  </div>
+                </div>
+              </>
+            )}
             {client.notes && (
               <>
                 <Separator />

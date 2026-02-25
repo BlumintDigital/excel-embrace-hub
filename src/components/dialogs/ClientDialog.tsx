@@ -17,6 +17,8 @@ export default function ClientDialog({ open, onOpenChange, client }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
   const [notes, setNotes] = useState("");
 
   const create = useCreateClient();
@@ -28,9 +30,11 @@ export default function ClientDialog({ open, onOpenChange, client }: Props) {
       setName(client.name);
       setEmail(client.email || "");
       setPhone(client.phone || "");
+      setAddress(client.address || "");
+      setContactPerson(client.contact_person || "");
       setNotes(client.notes || "");
     } else {
-      setName(""); setEmail(""); setPhone(""); setNotes("");
+      setName(""); setEmail(""); setPhone(""); setAddress(""); setContactPerson(""); setNotes("");
     }
   }, [client, open]);
 
@@ -41,6 +45,8 @@ export default function ClientDialog({ open, onOpenChange, client }: Props) {
       name: trimmed,
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
+      address: address.trim() || undefined,
+      contact_person: contactPerson.trim() || undefined,
       notes: notes.trim() || undefined,
     };
     if (isEdit) {
@@ -55,26 +61,36 @@ export default function ClientDialog({ open, onOpenChange, client }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Client" : "New Client"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Client name" />
+            <Label>Name <span className="text-destructive">*</span></Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Client / company name" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@example.com" />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 000 0000" />
+            </div>
           </div>
           <div>
-            <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@example.com" />
+            <Label>Key Contact Person</Label>
+            <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Full name of primary contact" />
           </div>
           <div>
-            <Label>Phone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 000 0000" />
+            <Label>Address</Label>
+            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, city, state/province, country" rows={2} />
           </div>
           <div>
             <Label>Notes</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional details..." rows={3} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional details..." rows={2} />
           </div>
         </div>
         <DialogFooter>
