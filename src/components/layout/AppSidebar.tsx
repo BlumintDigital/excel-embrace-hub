@@ -194,7 +194,7 @@ export function AppSidebar() {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center h-12 px-4 bg-card border-b border-border lg:hidden">
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center h-14 px-4 bg-card border-b border-border lg:hidden">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileOpen(true)}>
           <Menu className="h-4 w-4" />
         </Button>
