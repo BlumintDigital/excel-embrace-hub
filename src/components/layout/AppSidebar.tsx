@@ -198,7 +198,7 @@ export function AppSidebar() {
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileOpen(true)}>
           <Menu className="h-4 w-4" />
         </Button>
-        <img src={logoColor} alt="Blumint Workspace" className="h-5 ml-2 flex-1" />
+        <img src={logoColor} alt="Blumint Workspace" className="h-5 ml-2 object-contain max-w-[120px]" />
         <NotificationBell />
       </div>
 

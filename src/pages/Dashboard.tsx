@@ -98,7 +98,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <PageHeader
         title="Dashboard"
@@ -220,7 +220,7 @@ export default function Dashboard() {
           </div>
 
           {/* Charts section header with project filter */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-sm font-medium">Budget & Tasks</p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -231,7 +231,7 @@ export default function Dashboard() {
               </p>
             </div>
             <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-48 h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-48 h-8 text-sm">
                 <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
