@@ -128,17 +128,17 @@ export default function Projects() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {canEditAllProjects && (
-                            <DropdownMenuItem onClick={() => { setEditProject(project); setDialogOpen(true); }}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditProject(project); setDialogOpen(true); }}>
                               <Pencil className="h-3.5 w-3.5 mr-2" />Edit
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => setMembersProject(project)}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setMembersProject(project); }}>
                             <Users className="h-3.5 w-3.5 mr-2" />Members
                           </DropdownMenuItem>
                           {canDeleteProjects && (
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => setDeleteId(project.id)}
+                              onClick={(e) => { e.stopPropagation(); setDeleteId(project.id); }}
                             >
                               <Trash2 className="h-3.5 w-3.5 mr-2" />Delete
                             </DropdownMenuItem>

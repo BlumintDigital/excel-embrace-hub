@@ -23,6 +23,17 @@ function hexToHsl(hex: string): string | null {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+function applyFavicon(url: string | undefined) {
+  const href = url || "/favicon.ico";
+  let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  link.href = href;
+}
+
 function applyTheme(settings: { primaryColor: string; accentColor: string; sidebarStyle: "Dark" | "Light" | "Branded" }) {
   const root = document.documentElement;
   const primaryHsl = hexToHsl(settings.primaryColor);
@@ -87,6 +98,7 @@ export interface WorkspaceSettings {
   accentColor: string;
   sidebarStyle: "Dark" | "Light" | "Branded";
   currency: string;
+  faviconUrl?: string;
 }
 
 const DEFAULT_SETTINGS: WorkspaceSettings = {
@@ -119,6 +131,12 @@ function sanitizeSettings(patch: Partial<WorkspaceSettings>): Partial<WorkspaceS
   const knownCurrencies = ["USD","NGN","EUR","GBP","CAD","KES","GHS","ZAR","INR","JPY"];
   if (safe.currency !== undefined && !knownCurrencies.includes(safe.currency)) {
     delete safe.currency;
+  }
+  // Validate faviconUrl: must be a data URL (data:image/...) or empty string (reset)
+  if (safe.faviconUrl !== undefined) {
+    if (safe.faviconUrl !== "" && !safe.faviconUrl.startsWith("data:image/")) {
+      delete safe.faviconUrl;
+    }
   }
   return safe;
 }
@@ -176,6 +194,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     applyTheme(settings);
   }, [settings.primaryColor, settings.accentColor, settings.sidebarStyle]);
+
+  // Apply favicon whenever it changes
+  useEffect(() => {
+    applyFavicon(settings.faviconUrl);
+  }, [settings.faviconUrl]);
 
   const updateSettings = async (patch: Partial<WorkspaceSettings>) => {
     const newSettings = { ...settings, ...sanitizeSettings(patch) };

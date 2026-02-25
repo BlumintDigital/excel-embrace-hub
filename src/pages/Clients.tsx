@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import type { DbClient } from "@/hooks/use-supabase-data";
 import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Clients() {
+  const navigate = useNavigate();
   const { data: clients = [], isLoading: lc } = useClients();
   const { data: projects = [], isLoading: lp } = useProjects();
   const deleteClient = useDeleteClient();
@@ -100,7 +102,7 @@ export default function Clients() {
           {filtered.map((client) => {
             const clientProjects = projects.filter((p) => p.client_id === client.id);
             return (
-              <Card key={client.id} className="flex flex-col">
+              <Card key={client.id} className="flex flex-col cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/clients/${client.id}`)}>
                 <CardContent className="p-5 flex flex-col gap-4 flex-1">
                   {/* Top row: name + actions */}
                   <div className="flex items-start justify-between gap-2">
@@ -121,20 +123,20 @@ export default function Clients() {
                     {(canEditAllProjects || canDeleteProjects) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {canEditAllProjects && (
-                            <DropdownMenuItem onClick={() => openEdit(client)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEdit(client); }}>
                               <Pencil className="h-3.5 w-3.5 mr-2" /> Edit
                             </DropdownMenuItem>
                           )}
                           {canDeleteProjects && (
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => handleDelete(client.id)}
+                              onClick={(e) => { e.stopPropagation(); handleDelete(client.id); }}
                             >
                               <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                             </DropdownMenuItem>

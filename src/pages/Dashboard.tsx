@@ -37,10 +37,19 @@ export default function Dashboard() {
   // --- Stat card totals always reflect ALL projects ---
   const activeProjects = projects.filter((p) => p.status !== "Completed").length;
   const activeTasks = tasks.filter((t) => t.status !== "Done").length;
-  const totalBudgetProjected = projects.reduce((s, p) => s + (p.budget_projected || 0), 0);
-  const totalBudgetActual = projects.reduce((s, p) => s + (p.budget_actual || 0), 0);
-  const budgetHealth = totalBudgetProjected > 0
-    ? (totalBudgetActual / totalBudgetProjected * 100).toFixed(0)
+
+  // Budget card is filter-aware
+  const selectedProjectObj = selectedProject !== "all"
+    ? projects.find((p) => p.id === selectedProject)
+    : null;
+  const displayBudgetProjected = selectedProjectObj
+    ? (selectedProjectObj.budget_projected || 0)
+    : projects.reduce((s, p) => s + (p.budget_projected || 0), 0);
+  const displayBudgetActual = selectedProjectObj
+    ? (selectedProjectObj.budget_actual || 0)
+    : projects.reduce((s, p) => s + (p.budget_actual || 0), 0);
+  const budgetHealth = displayBudgetProjected > 0
+    ? (displayBudgetActual / displayBudgetProjected * 100).toFixed(0)
     : "0";
   const budgetPct = Number(budgetHealth);
 
@@ -85,7 +94,6 @@ export default function Dashboard() {
   const cards = [
     { label: "Active Projects", value: activeProjects, icon: FolderKanban, sub: `${projects.length} total`, up: true },
     { label: "Active Tasks", value: activeTasks, icon: ListTodo, sub: `${tasks.length} total`, up: false },
-    { label: "Budget Used", value: `${budgetHealth}%`, icon: DollarSign, sub: `${fmt(totalBudgetActual)} of ${fmt(totalBudgetProjected)}`, up: budgetPct < 60, budgetPct },
     { label: "Team Members", value: teamMembers.length, icon: Users, sub: "All active", up: true },
   ];
 
@@ -149,23 +157,66 @@ export default function Dashboard() {
                     <p className="text-2xl font-semibold font-heading">{card.value}</p>
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">{card.label}</p>
                     <p className="text-xs text-muted-foreground mt-2">{card.sub}</p>
-                    {"budgetPct" in card && (
-                      <Progress
-                        value={Math.min(card.budgetPct as number, 100)}
-                        className={cn(
-                          "mt-3 h-1.5",
-                          (card.budgetPct as number) > 85
-                            ? "[&>*]:bg-destructive"
-                            : (card.budgetPct as number) > 60
-                            ? "[&>*]:bg-warning"
-                            : "[&>*]:bg-success"
-                        )}
-                      />
-                    )}
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
+
+            {/* Budget Used card — per-project when "all", single project when filtered */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18 }}
+            >
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    {budgetPct < 60
+                      ? <TrendingUp className="h-3.5 w-3.5 text-success" />
+                      : <TrendingDown className="h-3.5 w-3.5 text-warning" />
+                    }
+                  </div>
+                  {selectedProject === "all" ? (
+                    <>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">Budget by Project</p>
+                      <div className="space-y-2">
+                        {projects.slice(0, 4).map((p) => {
+                          const pct = p.budget_projected > 0
+                            ? Math.round((p.budget_actual || 0) / p.budget_projected * 100) : 0;
+                          return (
+                            <div key={p.id}>
+                              <div className="flex justify-between text-xs mb-0.5">
+                                <span className="truncate max-w-[110px] text-muted-foreground">{p.name}</span>
+                                <span className={`font-medium ${pct > 85 ? "text-destructive" : pct > 60 ? "text-warning" : "text-success"}`}>{pct}%</span>
+                              </div>
+                              <Progress
+                                value={Math.min(pct, 100)}
+                                className={cn("h-1", pct > 85 ? "[&>*]:bg-destructive" : pct > 60 ? "[&>*]:bg-warning" : "[&>*]:bg-success")}
+                              />
+                            </div>
+                          );
+                        })}
+                        {projects.length === 0 && <p className="text-xs text-muted-foreground">No projects</p>}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-semibold font-heading">{budgetHealth}%</p>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">Budget Used</p>
+                      <p className="text-xs text-muted-foreground mt-2">{fmt(displayBudgetActual)} of {fmt(displayBudgetProjected)}</p>
+                      <Progress
+                        value={Math.min(budgetPct, 100)}
+                        className={cn(
+                          "mt-3 h-1.5",
+                          budgetPct > 85 ? "[&>*]:bg-destructive" : budgetPct > 60 ? "[&>*]:bg-warning" : "[&>*]:bg-success"
+                        )}
+                      />
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Charts section header with project filter */}

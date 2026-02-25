@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MemberHoverCard } from "@/components/MemberHoverCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import DeleteConfirmDialog from "@/components/dialogs/DeleteConfirmDialog";
 import { ROLE_BADGE_CLASSES, ROLE_LABELS } from "@/lib/status-config";
 
 export default function Team() {
+  const navigate = useNavigate();
   const { data: members = [], isLoading } = useTeamMembers();
   const { data: projectMembers = [] } = useProjectMembers();
   const { data: tasks = [] } = useTasks();
@@ -99,7 +101,7 @@ export default function Team() {
               const initials = (member.full_name || "?")
                 .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
               return (
-                <Card key={member.id}>
+                <Card key={member.id} onClick={() => navigate(`/team/${member.id}`)} className="cursor-pointer">
                   <CardContent className="p-3 flex items-center gap-3">
                     <MemberHoverCard member={member} activeTasks={activeTasks}>
                       <Avatar className="h-9 w-9 shrink-0 cursor-default">
@@ -124,7 +126,7 @@ export default function Team() {
                     {(canAssignRoles || canManageUsers) && !isSelf && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -135,13 +137,13 @@ export default function Team() {
                                 <UserCog className="h-3.5 w-3.5 mr-2" />Change Role
                               </DropdownMenuSubTrigger>
                               <DropdownMenuSubContent>
-                                <DropdownMenuItem disabled={role === "admin"} onClick={() => updateRole.mutate({ user_id: member.id, role: "admin" })}>
+                                <DropdownMenuItem disabled={role === "admin"} onClick={(e) => { e.stopPropagation(); updateRole.mutate({ user_id: member.id, role: "admin" }); }}>
                                   <ShieldCheck className="h-3.5 w-3.5 mr-2" />Admin
                                 </DropdownMenuItem>
-                                <DropdownMenuItem disabled={role === "project_manager"} onClick={() => updateRole.mutate({ user_id: member.id, role: "project_manager" })}>
+                                <DropdownMenuItem disabled={role === "project_manager"} onClick={(e) => { e.stopPropagation(); updateRole.mutate({ user_id: member.id, role: "project_manager" }); }}>
                                   <Shield className="h-3.5 w-3.5 mr-2" />Project Manager
                                 </DropdownMenuItem>
-                                <DropdownMenuItem disabled={role === "team_member"} onClick={() => updateRole.mutate({ user_id: member.id, role: "team_member" })}>
+                                <DropdownMenuItem disabled={role === "team_member"} onClick={(e) => { e.stopPropagation(); updateRole.mutate({ user_id: member.id, role: "team_member" }); }}>
                                   <UserCog className="h-3.5 w-3.5 mr-2" />Team Member
                                 </DropdownMenuItem>
                               </DropdownMenuSubContent>
@@ -150,7 +152,7 @@ export default function Team() {
                           {canManageUsers && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUserId(member.id)}>
+                              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteUserId(member.id); }}>
                                 <Trash2 className="h-3.5 w-3.5 mr-2" />Remove User
                               </DropdownMenuItem>
                             </>
@@ -189,7 +191,7 @@ export default function Team() {
                         .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
                       return (
-                        <tr key={member.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
+                        <tr key={member.id} onClick={() => navigate(`/team/${member.id}`)} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors cursor-pointer">
                           {/* Member */}
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -229,7 +231,7 @@ export default function Team() {
                             {activeTasks} active / {userTasks.length} total
                           </td>
                           {/* Actions */}
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             {(canAssignRoles || canManageUsers) && !isSelf && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

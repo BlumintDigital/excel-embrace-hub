@@ -21,6 +21,8 @@ export default function Budget() {
   const { data: projects = [], isLoading: lp } = useProjects();
   const [selectedProject, setSelectedProject] = useState<string>("");
   const activeProjectId = selectedProject || projects[0]?.id || "";
+  const activeProject = projects.find((p) => p.id === activeProjectId);
+  const projectBudget = activeProject?.budget_projected || 0;
   const { data: categories = [], isLoading: lb } = useBudgetCategories(activeProjectId);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -56,10 +58,10 @@ export default function Budget() {
     );
   }
 
-  const totalProjected = categories.reduce((s, c) => s + (c.projected || 0), 0);
+  const totalCategoryProjected = categories.reduce((s, c) => s + (c.projected || 0), 0);
   const totalActual = categories.reduce((s, c) => s + (c.actual || 0), 0);
-  const difference = totalProjected - totalActual;
-  const percentUsed = totalProjected > 0 ? Math.round((totalActual / totalProjected) * 100) : 0;
+  const difference = projectBudget - totalActual;
+  const percentUsed = projectBudget > 0 ? Math.round((totalActual / projectBudget) * 100) : 0;
 
   const barData = categories.map((c) => ({ name: c.name, Projected: c.projected || 0, Actual: c.actual || 0 }));
   const pieData = categories.map((c) => ({ name: c.name, value: c.actual || 0 }));
@@ -96,7 +98,7 @@ export default function Budget() {
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: "Projected Budget", value: fmt(totalProjected), icon: DollarSign, color: "text-primary" },
+          { label: "Projected Budget", value: fmt(projectBudget), icon: DollarSign, color: "text-primary" },
           { label: "Actual Spent", value: fmt(totalActual), icon: percentUsed > 80 ? TrendingDown : TrendingUp, color: percentUsed > 80 ? "text-destructive" : "text-success" },
           { label: "Remaining", value: `${difference >= 0 ? "+" : "-"}${fmt(Math.abs(difference))}`, icon: difference < 0 ? AlertTriangle : DollarSign, color: difference < 0 ? "text-destructive" : "text-success" },
         ].map((card, i) => (
@@ -194,7 +196,7 @@ export default function Budget() {
                   })}
                   <tr className="bg-muted/50 font-semibold">
                     <td className="p-3 text-sm">Total</td>
-                    <td className="p-3 text-sm text-right">{fmt(totalProjected)}</td>
+                    <td className="p-3 text-sm text-right">{fmt(projectBudget)}</td>
                     <td className="p-3 text-sm text-right">{fmt(totalActual)}</td>
                     <td className={`p-3 text-sm text-right ${difference >= 0 ? "text-success" : "text-destructive"}`}>{difference >= 0 ? "+" : ""}{fmt(difference)}</td>
                     <td className="p-3 text-sm text-right">{percentUsed}%</td>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ const COLUMN_DOT: Record<TaskStatus, string> = {
 };
 
 export default function Tasks() {
+  const navigate = useNavigate();
   const [view, setView] = useState<"board" | "list">("board");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editTask, setEditTask] = useState<DbTask | null>(null);
@@ -153,24 +155,25 @@ export default function Tasks() {
                     return (
                       <div
                         key={task.id}
-                        className="rounded-md border border-border bg-card p-3 hover:border-primary/30 transition-colors space-y-2.5"
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                        className="rounded-md border border-border bg-card p-3 hover:border-primary/30 transition-colors space-y-2.5 cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-medium leading-snug">{task.title}</p>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 -mt-0.5">
+                              <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 -mt-0.5" onClick={(e) => e.stopPropagation()}>
                                 <MoreHorizontal className="h-3 w-3" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-popover z-50">
                               {canEditAllTasks && (
-                                <DropdownMenuItem onClick={() => { setEditTask(task); setDialogOpen(true); }}>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditTask(task); setDialogOpen(true); }}>
                                   <Pencil className="h-3.5 w-3.5 mr-2" />Edit
                                 </DropdownMenuItem>
                               )}
                               {canDeleteAllTasks && (
-                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(task.id)}>
+                                <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteId(task.id); }}>
                                   <Trash2 className="h-3.5 w-3.5 mr-2" />Delete
                                 </DropdownMenuItem>
                               )}
@@ -239,7 +242,7 @@ export default function Tasks() {
                   const assignee = team.find((u) => u.id === task.assignee_id);
                   const project = projects.find((p) => p.id === task.project_id);
                   return (
-                    <tr key={task.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
+                    <tr key={task.id} onClick={() => navigate(`/tasks/${task.id}`)} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors cursor-pointer">
                       <td className="px-4 py-3 text-sm font-medium max-w-[140px] sm:max-w-none truncate">{task.title}</td>
                       {selectedProject === "all" && (
                         <td className="hidden sm:table-cell px-4 py-3 text-sm text-muted-foreground">{project?.name || "—"}</td>
@@ -268,7 +271,7 @@ export default function Tasks() {
                           : "—"
                         }
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7">

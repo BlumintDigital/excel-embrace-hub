@@ -17,9 +17,11 @@ import Projects from "@/pages/Projects";
 import ProjectDetail from "@/pages/ProjectDetail";
 import BulkImport from "@/pages/BulkImport";
 import Tasks from "@/pages/Tasks";
+import TaskDetail from "@/pages/TaskDetail";
 import Budget from "@/pages/Budget";
 import Timeline from "@/pages/Timeline";
 import Team from "@/pages/Team";
+import TeamMemberDetail from "@/pages/TeamMemberDetail";
 import Documents from "@/pages/Documents";
 import UserGuide from "@/pages/UserGuide";
 import ActivityLog from "@/pages/ActivityLog";
@@ -29,6 +31,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import PdfConverter from "@/pages/PdfConverter";
 import Clients from "@/pages/Clients";
+import ClientDetail from "@/pages/ClientDetail";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -71,15 +74,18 @@ const App = () => (
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/tasks" element={<Tasks />} />
+                <Route path="/tasks/:id" element={<TaskDetail />} />
                 <Route path="/budget" element={<Budget />} />
                 <Route path="/timeline" element={<Timeline />} />
                 <Route path="/team" element={<Team />} />
+                <Route path="/team/:id" element={<TeamMemberDetail />} />
                 <Route path="/documents" element={<Documents />} />
                 <Route path="/guide" element={<UserGuide />} />
                 <Route path="/activity" element={<ActivityLog />} />
                 <Route path="/pdf-converter" element={<PdfConverter />} />
                 <Route path="/import" element={<BulkImport />} />
                 <Route path="/clients" element={<Clients />} />
+                <Route path="/clients/:id" element={<ClientDetail />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>

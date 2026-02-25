@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCommandPalette } from "@/contexts/CommandPaletteContext";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const navGroups = [
   {
@@ -100,16 +101,17 @@ export function AppSidebar() {
 
       <Separator className="bg-sidebar-border" />
 
-      {/* Search trigger */}
-      <div className="px-3 pt-2.5 pb-1">
+      {/* Search trigger + notification bell */}
+      <div className="px-3 pt-2.5 pb-1 flex items-center gap-2">
         <button
           onClick={() => openPalette(true)}
-          className="flex w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/30 px-3 py-1.5 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
+          className="flex flex-1 items-center gap-2 rounded-md border border-sidebar-border bg-sidebar-accent/30 px-3 py-1.5 text-xs text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
         >
           <Search className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1 text-left">Search...</span>
           <kbd className="rounded bg-sidebar-border px-1.5 py-0.5 text-[10px] font-mono">⌘K</kbd>
         </button>
+        <NotificationBell className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 shrink-0" />
       </div>
 
       {/* Nav Groups */}
@@ -196,7 +198,8 @@ export function AppSidebar() {
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileOpen(true)}>
           <Menu className="h-4 w-4" />
         </Button>
-        <img src={logoColor} alt="Blumint Workspace" className="h-5 ml-2" />
+        <img src={logoColor} alt="Blumint Workspace" className="h-5 ml-2 flex-1" />
+        <NotificationBell />
       </div>
 
       {/* Mobile overlay */}

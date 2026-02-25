@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
+import { useNotificationPrefs } from "@/hooks/use-notification-prefs";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,13 +29,18 @@ import {
   Sun,
   Moon,
   Monitor,
+  AlertTriangle,
+  ImageIcon,
 } from "lucide-react";
 import logoColor from "@/assets/logo-color.png";
+import ResetPlatformDialog from "@/components/dialogs/ResetPlatformDialog";
 
 export default function SettingsPage() {
   const { user, profile, role } = useAuth();
   const { settings, updateSettings } = useWorkspace();
   const { theme, setTheme } = useTheme();
+
+  const [resetOpen, setResetOpen] = useState(false);
 
   // Profile state
   const [fullName, setFullName] = useState(profile?.full_name || "");
@@ -53,23 +59,40 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
-  // Notification preferences — persisted to localStorage
-  const NOTIF_KEY = "blumint_notification_prefs";
-  const loadNotifPrefs = () => {
-    try { return JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}"); } catch { return {}; }
-  };
-  const notifDefaults = { emailNotifs: true, taskAssigned: true, projectUpdates: true, budgetAlerts: true, weeklyDigest: false };
-  const saved = loadNotifPrefs();
-  const [emailNotifs, setEmailNotifs] = useState<boolean>(saved.emailNotifs ?? notifDefaults.emailNotifs);
-  const [taskAssigned, setTaskAssigned] = useState<boolean>(saved.taskAssigned ?? notifDefaults.taskAssigned);
-  const [projectUpdates, setProjectUpdates] = useState<boolean>(saved.projectUpdates ?? notifDefaults.projectUpdates);
-  const [budgetAlerts, setBudgetAlerts] = useState<boolean>(saved.budgetAlerts ?? notifDefaults.budgetAlerts);
-  const [weeklyDigest, setWeeklyDigest] = useState<boolean>(saved.weeklyDigest ?? notifDefaults.weeklyDigest);
+  // Notification preferences — persisted to DB via useNotificationPrefs
+  const { prefs: notifPrefs, savePrefs, saving: savingNotifs } = useNotificationPrefs();
+  const [emailNotifs, setEmailNotifs] = useState(notifPrefs.emailNotifs);
+  const [taskAssigned, setTaskAssigned] = useState(notifPrefs.taskAssigned);
+  const [projectUpdates, setProjectUpdates] = useState(notifPrefs.projectUpdates);
+  const [budgetAlerts, setBudgetAlerts] = useState(notifPrefs.budgetAlerts);
+  const [weeklyDigest, setWeeklyDigest] = useState(notifPrefs.weeklyDigest);
 
-  // Keep localStorage in sync whenever notification prefs change
+  // Sync local state when prefs load from DB
   useEffect(() => {
-    localStorage.setItem(NOTIF_KEY, JSON.stringify({ emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest }));
-  }, [emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest]);
+    setEmailNotifs(notifPrefs.emailNotifs);
+    setTaskAssigned(notifPrefs.taskAssigned);
+    setProjectUpdates(notifPrefs.projectUpdates);
+    setBudgetAlerts(notifPrefs.budgetAlerts);
+    setWeeklyDigest(notifPrefs.weeklyDigest);
+  }, [notifPrefs]);
+
+  // Favicon upload
+  const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 150 * 1024) {
+      toast.error("Favicon must be under 150 KB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      updateSettings({ faviconUrl: dataUrl });
+      toast.success("Favicon updated");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -98,7 +121,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveNotifications = () => {
-    localStorage.setItem(NOTIF_KEY, JSON.stringify({ emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest }));
+    savePrefs({ emailNotifs, taskAssigned, projectUpdates, budgetAlerts, weeklyDigest });
     toast.success("Notification preferences saved");
   };
 
@@ -284,6 +307,46 @@ export default function SettingsPage() {
 
               <Separator />
 
+              {/* Favicon */}
+              <div className="flex items-center gap-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted/50 overflow-hidden">
+                  {settings.faviconUrl ? (
+                    <img src={settings.faviconUrl} alt="Favicon" className="h-8 w-8 object-contain" />
+                  ) : (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Favicon</Label>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="gap-2" asChild>
+                      <label className="cursor-pointer">
+                        <Upload className="h-4 w-4" /> Upload Favicon
+                        <input
+                          type="file"
+                          accept=".ico,.png,.svg,.jpg,.jpeg"
+                          className="hidden"
+                          onChange={handleFaviconChange}
+                        />
+                      </label>
+                    </Button>
+                    {settings.faviconUrl && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { updateSettings({ faviconUrl: "" }); toast.success("Favicon reset"); }}
+                        className="text-muted-foreground"
+                      >
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">ICO, PNG or SVG. Max 150 KB.</p>
+                </div>
+              </div>
+
+              <Separator />
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="companyName">Workspace Name</Label>
@@ -411,8 +474,8 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex justify-end pt-2">
-                <Button onClick={handleSaveNotifications} className="gap-2">
-                  <Save className="h-4 w-4" /> Save Preferences
+                <Button onClick={handleSaveNotifications} disabled={savingNotifs} className="gap-2">
+                  <Save className="h-4 w-4" /> {savingNotifs ? "Saving..." : "Save Preferences"}
                 </Button>
               </div>
             </CardContent>
@@ -543,6 +606,33 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {role === "admin" && (
+        <Card className="border-destructive/30">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" /> Danger Zone
+            </CardTitle>
+            <CardDescription>Irreversible actions. Proceed with extreme caution.</CardDescription>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">Reset Platform Data</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Permanently deletes all projects, tasks, budgets, documents, and clients. User accounts are preserved.
+                </p>
+              </div>
+              <Button variant="destructive" size="sm" onClick={() => setResetOpen(true)}>
+                Reset All Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <ResetPlatformDialog open={resetOpen} onOpenChange={setResetOpen} />
     </div>
   );
 }
