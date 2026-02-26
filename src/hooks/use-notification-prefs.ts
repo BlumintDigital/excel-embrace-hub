@@ -51,7 +51,7 @@ export function useNotificationPrefs() {
           localStorage.setItem(storageKey(user.id), JSON.stringify(merged));
         }
       })
-      .catch(() => {
+      .then(undefined, () => {
         // Column not yet added — localStorage-only mode
       });
   }, [user?.id]);
