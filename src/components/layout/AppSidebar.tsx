@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
   Search,
+  BarChart2,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import logoWhite from "@/assets/logo-white.png";
@@ -56,6 +57,7 @@ const navGroups = [
       { label: "Documents", icon: FileText, path: "/documents" },
       { label: "PDF to Word", icon: FileOutput, path: "/pdf-converter" },
       { label: "CSV Import", icon: FileUp, path: "/import" },
+      { label: "Reports", icon: BarChart2, path: "/reports" },
       { label: "User Guide", icon: BookOpen, path: "/guide" },
       { label: "Activity Log", icon: Activity, path: "/activity" },
     ],

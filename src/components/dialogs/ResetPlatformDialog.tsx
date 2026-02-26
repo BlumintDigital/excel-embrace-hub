@@ -29,10 +29,20 @@ export default function ResetPlatformDialog({ open, onOpenChange }: Props) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const { error } = await supabase.functions.invoke("reset-platform", {
+      const { data, error } = await supabase.functions.invoke("reset-platform", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      if (error) throw error;
+      if (error) {
+        // Try to extract the real error message from the function response body
+        let msg = error.message || "Failed to reset platform data";
+        try {
+          // FunctionsHttpError has a context with the raw Response
+          const body = await (error as any).context?.json?.();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore parse errors */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
 
       qc.clear();
       onOpenChange(false);

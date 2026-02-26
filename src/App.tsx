@@ -32,6 +32,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import PdfConverter from "@/pages/PdfConverter";
 import Clients from "@/pages/Clients";
 import ClientDetail from "@/pages/ClientDetail";
+import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -86,6 +87,7 @@ const App = () => (
                 <Route path="/import" element={<BulkImport />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/:id" element={<ClientDetail />} />
+                <Route path="/reports" element={<Reports />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Route>

@@ -60,12 +60,17 @@ Deno.serve(async (req) => {
       "clients",
     ];
 
+    const errors: string[] = [];
     for (const table of tables) {
       const { error } = await adminClient
         .from(table)
         .delete()
         .neq("id", "00000000-0000-0000-0000-000000000000");
-      if (error) throw new Error(`Failed to clear ${table}: ${error.message}`);
+      if (error) errors.push(`${table}: ${error.message}`);
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Some tables failed to clear: ${errors.join("; ")}`);
     }
 
     return new Response(JSON.stringify({ success: true }), {

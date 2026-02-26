@@ -519,10 +519,10 @@ export default function ProjectDetail() {
             <>
               {/* Charts */}
               <div className="grid gap-6 lg:grid-cols-3">
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 overflow-hidden">
                   <CardHeader><CardTitle className="text-base">Category Comparison (in {cur.code})</CardTitle></CardHeader>
                   <CardContent>
-                    <ChartContainer config={barConfig} className="h-[260px] w-full">
+                    <ChartContainer config={barConfig} className="h-[220px] sm:h-[260px] w-full">
                       <BarChart data={barData} barGap={4}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
@@ -534,10 +534,10 @@ export default function ProjectDetail() {
                     </ChartContainer>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="overflow-hidden">
                   <CardHeader><CardTitle className="text-base">Expense Breakdown</CardTitle></CardHeader>
                   <CardContent className="flex flex-col items-center">
-                    <ChartContainer config={pieConfig} className="h-[200px] w-full">
+                    <ChartContainer config={pieConfig} className="h-[160px] sm:h-[200px] w-full">
                       <PieChart>
                         <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={78} paddingAngle={3} dataKey="value">
                           {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
@@ -561,7 +561,50 @@ export default function ProjectDetail() {
               <Card>
                 <CardHeader><CardTitle className="text-base">Budget Details</CardTitle></CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
+                  {/* Mobile card list */}
+                  <div className="sm:hidden divide-y divide-border">
+                    {categories.map((cat) => {
+                      const diff = (cat.projected || 0) - (cat.actual || 0);
+                      const pct = cat.projected > 0 ? Math.round(((cat.actual || 0) / cat.projected) * 100) : 0;
+                      return (
+                        <div key={cat.id} className="px-4 py-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{cat.name}</span>
+                            {canManageBudget && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => { setEditCat(cat); setBudgetDialogOpen(true); }}><Pencil className="h-3.5 w-3.5 mr-2" />Edit</DropdownMenuItem>
+                                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteCatId(cat.id)}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Projected</span>
+                              <p className="font-medium">{fmt(cat.projected || 0)}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Actual</span>
+                              <p className="font-medium">{fmt(cat.actual || 0)}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Difference</span>
+                              <p className={`font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}{fmt(diff)}</p>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">% Used</span>
+                              <p className="font-medium">{pct}%</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Desktop table */}
+                  <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b text-left text-xs text-muted-foreground">
