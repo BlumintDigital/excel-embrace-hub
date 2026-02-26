@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -35,12 +34,16 @@ export default function ResetPlatformDialog({ open, onOpenChange }: Props) {
       });
       if (error) {
         let msg = error.message || "Failed to reset platform data";
-        if (error instanceof FunctionsHttpError) {
+        const ctx = (error as any).context as Response | undefined;
+        if (ctx) {
           try {
-            const text = await error.context.text();
+            const text = await ctx.text();
             const body = JSON.parse(text);
             if (body?.error) msg = body.error;
-          } catch { /* ignore parse errors */ }
+            else msg = `HTTP ${ctx.status}: ${text || msg}`;
+          } catch {
+            if (ctx.status) msg = `HTTP ${ctx.status}: ${msg}`;
+          }
         }
         throw new Error(msg);
       }
