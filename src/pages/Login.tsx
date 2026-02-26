@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import logoColor from "@/assets/logo-color.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AuthLayout } from "@/components/layout/AuthLayout";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -31,41 +30,35 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-        <div className="flex items-center justify-center mb-8">
-          <img src={logoColor} alt="Blumint Workspace" className="h-10" />
-        </div>
-
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Sign in to your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="alex@pipeworks.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
+    <AuthLayout>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>Sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="alex@pipeworks.com" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
-                </div>
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Sign In
-              </Button>
-            </form>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Contact your administrator to request access.
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
+              <Input id="password" type="password" placeholder="••••••••" className="h-11" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} />
+            </div>
+            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Sign In
+            </Button>
+          </form>
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Contact your administrator to request access.
+          </p>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }

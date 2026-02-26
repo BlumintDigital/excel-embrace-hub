@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle } from "lucide-react";
-import logoColor from "@/assets/logo-color.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AuthLayout } from "@/components/layout/AuthLayout";
 
 export default function ForgotPassword() {
   const { toast } = useToast();
@@ -32,44 +31,38 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-        <div className="flex items-center justify-center mb-8">
-          <img src={logoColor} alt="Blumint Workspace" className="h-10" />
-        </div>
-
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle>Reset Password</CardTitle>
-            <CardDescription>Enter your email and we'll send you a reset link</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {sent ? (
-              <div className="text-center space-y-3 py-4">
-                <CheckCircle className="h-12 w-12 text-success mx-auto" />
-                <p className="text-sm font-medium">Check your email</p>
-                <p className="text-xs text-muted-foreground">We've sent a password reset link to <strong>{email}</strong></p>
-                <Link to="/login" className="text-primary hover:underline text-sm font-medium block mt-4">Back to Sign In</Link>
+    <AuthLayout>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl">Reset Password</CardTitle>
+          <CardDescription>Enter your email and we'll send you a reset link</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sent ? (
+            <div className="text-center space-y-3 py-6">
+              <CheckCircle className="h-12 w-12 text-success mx-auto" />
+              <p className="text-sm font-medium">Check your email</p>
+              <p className="text-xs text-muted-foreground">We've sent a password reset link to <strong>{email}</strong></p>
+              <Link to="/login" className="text-primary hover:underline text-sm font-medium block mt-4">Back to Sign In</Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" placeholder="alex@pipeworks.com" className="h-11" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="alex@pipeworks.com" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Send Reset Link
-                </Button>
-                <p className="text-center text-sm text-muted-foreground">
-                  Remember your password?{" "}
-                  <Link to="/login" className="text-primary hover:underline font-medium">Sign in</Link>
-                </p>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Send Reset Link
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Remember your password?{" "}
+                <Link to="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+              </p>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }
