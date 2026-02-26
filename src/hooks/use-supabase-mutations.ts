@@ -623,7 +623,18 @@ export function useInviteUser() {
   return useMutation({
     mutationFn: async (data: { email: string; full_name: string; role: string }) => {
       const { data: result, error } = await supabase.functions.invoke("invite-user", { body: data });
-      if (error) throw error;
+      if (error) {
+        let msg = error.message || "Failed to invite user";
+        const ctx = (error as any).context as Response | undefined;
+        if (ctx) {
+          try {
+            const text = await ctx.text();
+            const body = JSON.parse(text);
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
       if (result?.error) throw new Error(result.error);
       return result;
     },
