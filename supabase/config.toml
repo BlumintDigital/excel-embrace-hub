@@ -1,2 +1,17 @@
 [functions.pdf-to-word]
 verify_jwt = false
+
+[functions.reset-platform]
+verify_jwt = false
+
+[functions.invite-user]
+verify_jwt = false
+
+[functions.update-user-role]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.send-notification]
+verify_jwt = false
