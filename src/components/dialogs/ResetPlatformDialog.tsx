@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -33,13 +34,14 @@ export default function ResetPlatformDialog({ open, onOpenChange }: Props) {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (error) {
-        // Try to extract the real error message from the function response body
         let msg = error.message || "Failed to reset platform data";
-        try {
-          // FunctionsHttpError has a context with the raw Response
-          const body = await (error as any).context?.json?.();
-          if (body?.error) msg = body.error;
-        } catch { /* ignore parse errors */ }
+        if (error instanceof FunctionsHttpError) {
+          try {
+            const text = await error.context.text();
+            const body = JSON.parse(text);
+            if (body?.error) msg = body.error;
+          } catch { /* ignore parse errors */ }
+        }
         throw new Error(msg);
       }
       if (data?.error) throw new Error(data.error);
