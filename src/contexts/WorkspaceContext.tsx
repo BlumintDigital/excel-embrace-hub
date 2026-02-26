@@ -208,8 +208,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase
         .from("workspace_settings")
-        .update({ setting_value: newSettings as any, updated_at: new Date().toISOString() })
-        .eq("setting_key", "workspace");
+        .upsert(
+          { setting_key: "workspace", setting_value: newSettings as any, updated_at: new Date().toISOString() },
+          { onConflict: "setting_key" }
+        );
 
       if (error) {
         console.error("Failed to save workspace settings to database:", error.message);

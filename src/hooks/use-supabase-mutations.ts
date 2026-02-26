@@ -13,6 +13,18 @@ import type {
   DbClient,
 } from "./use-supabase-data";
 
+// Fire-and-forget email notification helper
+function sendEmailNotification(params: {
+  event_type: "task_assigned" | "project_updated" | "budget_alert";
+  entity_name: string;
+  details: string;
+  target_user_ids?: string[];
+}) {
+  supabase.functions.invoke("send-notification", { body: params }).catch(() => {
+    // silently ignore — email is best-effort
+  });
+}
+
 // ── Projects ──
 export function useCreateProject() {
   const qc = useQueryClient();
@@ -76,6 +88,13 @@ export function useUpdateProject() {
       qc.invalidateQueries({ queryKey: ["projects"] });
       toast.success("Project updated");
       logActivity({ action: "updated", entity_type: "project", entity_name: data.name || "project", entity_id: data.id });
+      if (data.status) {
+        sendEmailNotification({
+          event_type: "project_updated",
+          entity_name: data.name || "A project",
+          details: `Project status changed to: ${data.status}`,
+        });
+      }
     },
     onError: (e: Error, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["projects"], ctx.prev);
@@ -146,6 +165,14 @@ export function useCreateTask() {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Task created");
       logActivity({ action: "created", entity_type: "task", entity_name: data.title });
+      if (data.assignee_id) {
+        sendEmailNotification({
+          event_type: "task_assigned",
+          entity_name: data.title,
+          details: `You have been assigned a new task.`,
+          target_user_ids: [data.assignee_id],
+        });
+      }
     },
     onError: (e: Error, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["tasks"], ctx.prev);
@@ -179,6 +206,14 @@ export function useUpdateTask() {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Task updated");
       logActivity({ action: "updated", entity_type: "task", entity_id: data.id, details: data.status ? `Status → ${data.status}` : undefined });
+      if (data.assignee_id) {
+        sendEmailNotification({
+          event_type: "task_assigned",
+          entity_name: `Task ${data.id}`,
+          details: `You have been assigned to a task.`,
+          target_user_ids: [data.assignee_id],
+        });
+      }
     },
     onError: (e: Error, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["tasks"], ctx.prev);
@@ -288,6 +323,13 @@ export function useUpdateBudgetCategory() {
       qc.invalidateQueries({ queryKey: ["budget_categories"] });
       toast.success("Category updated");
       logActivity({ action: "updated", entity_type: "budget_category", entity_id: data.id });
+      if (data.actual !== undefined && data.projected !== undefined && data.actual > data.projected) {
+        sendEmailNotification({
+          event_type: "budget_alert",
+          entity_name: data.name || "Budget category",
+          details: `Actual spend ($${data.actual}) has exceeded the projected budget ($${data.projected}).`,
+        });
+      }
     },
     onError: (e: Error, _v, ctx: any) => {
       if (ctx?.snapshots) for (const { key, prev } of ctx.snapshots) qc.setQueryData(key, prev);
