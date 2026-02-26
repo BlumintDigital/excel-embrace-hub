@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useCreateProject, useUpdateProject } from "@/hooks/use-supabase-mutations";
 import { useClients } from "@/hooks/use-supabase-data";
 import type { DbProject } from "@/hooks/use-supabase-data";
+import { useWorkspace, CURRENCIES } from "@/contexts/WorkspaceContext";
 
 interface Props {
   open: boolean;
@@ -30,10 +31,12 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [clientId, setClientId] = useState("");
+  const [currency, setCurrency] = useState("USD");
 
   const create = useCreateProject();
   const update = useUpdateProject();
   const { data: clients = [] } = useClients();
+  const { settings } = useWorkspace();
   const isEdit = !!project;
 
   useEffect(() => {
@@ -42,16 +45,17 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
       setDescription(project.description || "");
       setStatus(project.status);
       setBudgetProjected(String(project.budget_projected || ""));
+      setCurrency(project.currency || settings.currency || "USD");
       setStartDate(project.start_date ? new Date(project.start_date + "T00:00:00") : undefined);
       setEndDate(project.end_date ? new Date(project.end_date + "T00:00:00") : undefined);
       setClientId(project.client_id || "");
     } else {
-      setName(""); setDescription(""); setStatus("Planning"); setBudgetProjected(""); setStartDate(undefined); setEndDate(undefined); setClientId("");
+      setName(""); setDescription(""); setStatus("Planning"); setBudgetProjected(""); setCurrency(settings.currency || "USD"); setStartDate(undefined); setEndDate(undefined); setClientId("");
     }
   }, [project, open]);
 
   const handleSubmit = async () => {
-    const data = { name: name.trim(), description: description.trim() || undefined, status, budget_projected: Number(budgetProjected) || 0, start_date: startDate ? format(startDate, "yyyy-MM-dd") : undefined, end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined, client_id: clientId || undefined };
+    const data = { name: name.trim(), description: description.trim() || undefined, status, budget_projected: Number(budgetProjected) || 0, currency, start_date: startDate ? format(startDate, "yyyy-MM-dd") : undefined, end_date: endDate ? format(endDate, "yyyy-MM-dd") : undefined, client_id: clientId || undefined };
     if (!data.name) return;
     try {
       if (isEdit) {
@@ -86,7 +90,23 @@ export default function ProjectDialog({ open, onOpenChange, project }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div><Label>Budget Projected ($)</Label><Input type="number" value={budgetProjected} onChange={(e) => setBudgetProjected(e.target.value)} placeholder="0" /></div>
+          <div className="grid grid-cols-3 gap-3 items-end">
+            <div className="col-span-2">
+              <Label>Budget Projected</Label>
+              <Input type="number" value={budgetProjected} onChange={(e) => setBudgetProjected(e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <Label>Currency</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Start Date</Label>
               <Popover>
