@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ROLES = ["admin", "project_manager", "team_member"];
-const SITE_URL = Deno.env.get("SITE_URL") || "https://excel-embrace-hub.lovable.app";
+const SITE_URL = Deno.env.get("SITE_URL") || "https://excel-embrace-hub.vercel.app";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
