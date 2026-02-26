@@ -65,8 +65,6 @@ export default function ProjectDetail() {
   // ── Permissions & workspace ───────────────────────────────────────────────
   const { canCreateTasks, canEditAllTasks, canDeleteAllTasks, canManageBudget, canEditAllProjects } = usePermissions();
   const { settings } = useWorkspace();
-  const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
-  const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
 
   // ── Local state ───────────────────────────────────────────────────────────
   const [taskView, setTaskView] = useState<"board" | "list">("board");
@@ -134,6 +132,8 @@ export default function ProjectDetail() {
   }
 
   // ── Post-guard computations ───────────────────────────────────────────────
+  const cur = CURRENCIES.find((c) => c.code === (project.currency || settings.currency)) || CURRENCIES[0];
+  const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
   const client = clients.find((c) => c.id === project.client_id);
   const doneTasks = projectTasks.filter((t) => t.status === "Done").length;
   const budgetPercent = project.budget_projected > 0

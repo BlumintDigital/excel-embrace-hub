@@ -30,16 +30,16 @@ export function useCreateProject() {
   const qc = useQueryClient();
   const { canCreateProjects } = usePermissions();
   return useMutation({
-    onMutate: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number; client_id?: string }) => {
+    onMutate: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number; currency?: string; client_id?: string }) => {
       await qc.cancelQueries({ queryKey: ["projects"] });
       const prev = qc.getQueryData<DbProject[]>(["projects"]) ?? [];
       qc.setQueryData<DbProject[]>(["projects"], [
-        { ...data, id: `offline_${crypto.randomUUID()}`, budget_actual: 0, created_by: null, created_at: new Date().toISOString() },
+        { ...data, id: `offline_${crypto.randomUUID()}`, budget_actual: 0, currency: data.currency ?? null, created_by: null, created_at: new Date().toISOString() },
         ...prev,
       ]);
       return { prev };
     },
-    mutationFn: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number; client_id?: string }) => {
+    mutationFn: async (data: { name: string; description?: string; status: string; start_date?: string; end_date?: string; budget_projected: number; currency?: string; client_id?: string }) => {
       if (!canCreateProjects) throw new Error("Insufficient permissions");
       return retryOrQueue(
         { table: "projects", op: "insert", payload: data, queryKeys: [["projects"]] },
@@ -67,13 +67,13 @@ export function useUpdateProject() {
   const qc = useQueryClient();
   const { canEditAllProjects } = usePermissions();
   return useMutation({
-    onMutate: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number; client_id?: string }) => {
+    onMutate: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number; currency?: string; client_id?: string }) => {
       await qc.cancelQueries({ queryKey: ["projects"] });
       const prev = qc.getQueryData<DbProject[]>(["projects"]) ?? [];
       qc.setQueryData<DbProject[]>(["projects"], prev.map(p => p.id === id ? { ...p, ...data } : p));
       return { prev };
     },
-    mutationFn: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number; client_id?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; name?: string; description?: string; status?: string; start_date?: string; end_date?: string; budget_projected?: number; budget_actual?: number; currency?: string; client_id?: string }) => {
       if (!canEditAllProjects) throw new Error("Insufficient permissions");
       return retryOrQueue(
         { table: "projects", op: "update", payload: data, filter: { id }, queryKeys: [["projects"]] },

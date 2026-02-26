@@ -142,6 +142,8 @@ export default function Reports() {
   const { settings } = useWorkspace();
   const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
   const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
+  const fmtDiff = (v: number) =>
+    v >= 0 ? `+${cur.symbol}${v.toLocaleString()}` : `-${cur.symbol}${Math.abs(v).toLocaleString()}`;
 
   const isLoading = lp || lt || lb || lc || lm;
 
@@ -252,7 +254,7 @@ export default function Reports() {
         ["Name", "Email", "Role", "Total Tasks", "To Do", "In Progress", "Done"],
         teamRows.map(({ member, total, todo, inProgress, done }) => [
           member.full_name ?? "—", member.email ?? "—",
-          member.app_role ?? "—", total, todo, inProgress, done,
+          member.app_role?.replace(/_/g, " ") ?? "—", total, todo, inProgress, done,
         ]),
         `team-workload-${Date.now()}.csv`,
       );
@@ -316,7 +318,7 @@ export default function Reports() {
         ["Name", "Email", "Role", "Total Tasks", "To Do", "In Progress", "Done"],
         teamRows.map(({ member, total, todo, inProgress, done }) => [
           member.full_name ?? "—", member.email ?? "—",
-          member.app_role?.replace("_", " ") ?? "—",
+          member.app_role?.replace(/_/g, " ") ?? "—",
           total, todo, inProgress, done,
         ]),
         `team-workload-${Date.now()}.pdf`,
@@ -551,7 +553,7 @@ export default function Reports() {
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                           <div><span className="text-muted-foreground">Projected</span><p className="font-medium">{fmt(cat.projected || 0)}</p></div>
                           <div><span className="text-muted-foreground">Actual</span><p className="font-medium">{fmt(cat.actual || 0)}</p></div>
-                          <div><span className="text-muted-foreground">Difference</span><p className={`font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}{fmt(diff)}</p></div>
+                          <div><span className="text-muted-foreground">Difference</span><p className={`font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{fmtDiff(diff)}</p></div>
                           <div><span className="text-muted-foreground">% Used</span><p className="font-medium">{pct}%</p></div>
                         </div>
                       </div>
@@ -577,7 +579,7 @@ export default function Reports() {
                             <td className="px-4 py-3 text-sm font-medium">{cat.name}</td>
                             <td className="px-4 py-3 text-sm text-right">{fmt(cat.projected || 0)}</td>
                             <td className="px-4 py-3 text-sm text-right">{fmt(cat.actual || 0)}</td>
-                            <td className={`px-4 py-3 text-sm text-right font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{diff >= 0 ? "+" : ""}{fmt(diff)}</td>
+                            <td className={`px-4 py-3 text-sm text-right font-medium ${diff >= 0 ? "text-success" : "text-destructive"}`}>{fmtDiff(diff)}</td>
                             <td className="px-4 py-3 text-sm text-right">{pct}%</td>
                           </tr>
                         ))}
@@ -678,7 +680,7 @@ export default function Reports() {
                           <tr key={member.id} className="border-b last:border-0 hover:bg-muted/40">
                             <td className="px-4 py-3 text-sm font-medium">{member.full_name ?? "—"}</td>
                             <td className="px-4 py-3 text-sm text-muted-foreground">{member.email ?? "—"}</td>
-                            <td className="px-4 py-3 text-sm text-muted-foreground capitalize">{member.app_role?.replace("_", " ") ?? "—"}</td>
+                            <td className="px-4 py-3 text-sm text-muted-foreground capitalize">{member.app_role?.replace(/_/g, " ") ?? "—"}</td>
                             <td className="px-4 py-3 text-sm text-right font-semibold">{total}</td>
                             <td className="px-4 py-3 text-sm text-right text-muted-foreground">{todo}</td>
                             <td className="px-4 py-3 text-sm text-right text-muted-foreground">{inProgress}</td>

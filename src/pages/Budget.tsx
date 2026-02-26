@@ -32,7 +32,8 @@ export default function Budget() {
   const { canManageBudget } = usePermissions();
 
   const { settings } = useWorkspace();
-  const cur = CURRENCIES.find((c) => c.code === settings.currency) || CURRENCIES[0];
+  const projectCurrency = activeProject?.currency || settings.currency;
+  const cur = CURRENCIES.find((c) => c.code === projectCurrency) || CURRENCIES[0];
   const fmt = (v: number) => `${cur.symbol}${v.toLocaleString()}`;
 
   if (lp) {
