@@ -34,7 +34,7 @@ export function useCreateProject() {
       await qc.cancelQueries({ queryKey: ["projects"] });
       const prev = qc.getQueryData<DbProject[]>(["projects"]) ?? [];
       qc.setQueryData<DbProject[]>(["projects"], [
-        { ...data, id: `offline_${crypto.randomUUID()}`, budget_actual: 0, currency: data.currency ?? null, created_by: null, created_at: new Date().toISOString() },
+        { ...data, id: `offline_${crypto.randomUUID()}`, budget_actual: 0, currency: data.currency ?? null, created_by: null, created_at: new Date().toISOString() } as DbProject,
         ...prev,
       ]);
       return { prev };
@@ -145,7 +145,7 @@ export function useCreateTask() {
       await qc.cancelQueries({ queryKey: ["tasks"] });
       const prev = qc.getQueryData<DbTask[]>(["tasks"]) ?? [];
       qc.setQueryData<DbTask[]>(["tasks"], [
-        { ...data, id: `offline_${crypto.randomUUID()}`, created_at: new Date().toISOString() },
+        { ...data, id: `offline_${crypto.randomUUID()}`, created_at: new Date().toISOString() } as DbTask,
         ...prev,
       ]);
       return { prev };
@@ -386,7 +386,7 @@ export function useCreateDocument() {
       await qc.cancelQueries({ queryKey: ["documents"] });
       const prev = qc.getQueryData<DbDocument[]>(["documents"]) ?? [];
       qc.setQueryData<DbDocument[]>(["documents"], [
-        { ...data, id: `offline_${crypto.randomUUID()}`, uploaded_by: null, created_at: new Date().toISOString() },
+        { ...data, id: `offline_${crypto.randomUUID()}`, uploaded_by: null, created_at: new Date().toISOString() } as DbDocument,
         ...prev,
       ]);
       return { prev };
@@ -521,7 +521,7 @@ export function useCreateClient() {
       await qc.cancelQueries({ queryKey: ["clients"] });
       const prev = qc.getQueryData<DbClient[]>(["clients"]) ?? [];
       qc.setQueryData<DbClient[]>(["clients"], [
-        { ...data, id: `offline_${crypto.randomUUID()}`, email: data.email ?? null, phone: data.phone ?? null, notes: data.notes ?? null, created_by: null, created_at: new Date().toISOString() },
+        { ...data, id: `offline_${crypto.randomUUID()}`, email: data.email ?? null, phone: data.phone ?? null, notes: data.notes ?? null, address: null, contact_person: null, created_by: null, created_at: new Date().toISOString() },
         ...prev,
       ]);
       return { prev };

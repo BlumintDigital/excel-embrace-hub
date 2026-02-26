@@ -84,7 +84,7 @@ export async function flushQueue(qc: QueryClient) {
   if (flushing || !onlineManager.isOnline()) return;
   flushing = true;
   try {
-    const ops = await db.queue.orderBy("createdAt").toArray();
+    const ops = (await db.queue.toArray()).sort((a, b) => a.createdAt - b.createdAt);
     if (ops.length === 0) return;
 
     for (const op of ops) {
