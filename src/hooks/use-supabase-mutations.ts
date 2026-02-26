@@ -652,7 +652,18 @@ export function useUpdateUserRole() {
   return useMutation({
     mutationFn: async (data: { user_id: string; role: string }) => {
       const { data: result, error } = await supabase.functions.invoke("update-user-role", { body: data });
-      if (error) throw error;
+      if (error) {
+        let msg = error.message || "Failed to update role";
+        const ctx = (error as any).context as Response | undefined;
+        if (ctx) {
+          try {
+            const text = await ctx.text();
+            const body = JSON.parse(text);
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
       if (result?.error) throw new Error(result.error);
     },
     onSuccess: (_v, data) => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("Role updated"); logActivity({ action: "changed role", entity_type: "role", entity_id: data.user_id, details: `New role: ${data.role}` }); },
@@ -665,7 +676,18 @@ export function useDeleteUser() {
   return useMutation({
     mutationFn: async (userId: string) => {
       const { data: result, error } = await supabase.functions.invoke("delete-user", { body: { user_id: userId } });
-      if (error) throw error;
+      if (error) {
+        let msg = error.message || "Failed to delete user";
+        const ctx = (error as any).context as Response | undefined;
+        if (ctx) {
+          try {
+            const text = await ctx.text();
+            const body = JSON.parse(text);
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
       if (result?.error) throw new Error(result.error);
     },
     onSuccess: (_v, userId) => { qc.invalidateQueries({ queryKey: ["team_members"] }); toast.success("User removed"); logActivity({ action: "deleted", entity_type: "user", entity_id: userId }); },
